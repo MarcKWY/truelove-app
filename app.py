@@ -4,77 +4,70 @@ import pandas as pd
 from datetime import datetime
 from PIL import Image
 
-# --- SETUP: STABILE VERSION ---
+# --- SETUP ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* TITEL: GOLDIG UND GROSS */
-    .truelove-title {
-        font-family: 'Georgia', serif;
-        font-size: 72px !important;
-        font-weight: bold;
-        color: #D4AF37 !important;
-        text-align: center;
-        letter-spacing: 5px;
-        margin-bottom: 0px;
+    /* TEXT-STYLING */
+    label, .stRadio label, p, span {
+        color: #FFFFFF !important;
+        font-size: 22px !important;
+        font-weight: 500 !important;
     }
+    div[data-testid="stRadio"] label { font-size: 45px !important; }
+    input { color: #000000 !important; font-size: 18px !important; }
+    img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
     
-    .crownline-subtitle {
-        font-family: 'Helvetica Neue', sans-serif;
-        font-size: 20px;
-        color: #FFFFFF;
-        text-align: center;
-        margin-top: -10px;
-    }
-
-    /* UPLOAD FENSTER: DUNKELBLAU MIT GOLDRAND */
+    /* UPLOAD FENSTER: HELLGOLD HINTERGRUND / SCHWARZE SCHRIFT */
     [data-testid="stFileUploadDropzone"] {
-        background-color: #0A1E3C !important;
-        border: 2px solid #D4AF37 !important;
-        border-radius: 15px !important;
+        background-color: #D4AF37 !important;
+        border: 2px dashed #FFFFFF !important;
     }
     [data-testid="stFileUploadDropzone"] * {
-        color: #FFFFFF !important;
+        color: #000000 !important;
+        font-weight: bold !important;
     }
 
-    /* DESIGN-ELEMENTE AUS DEINER BESTEN VERSION */
-    div[data-testid="stRadio"] > div {
-        background-color: rgba(5, 15, 30, 0.85);
-        padding: 15px;
-        border-radius: 15px;
-        border: 2px solid #D4AF37;
-        margin-top: 10px;
+    .stButton>button {
+        background-color: #8B6914 !important;
+        color: white !important;
+        border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important;
     }
-    div[data-testid="stRadio"] label {
-        font-size: 45px !important;
-        font-weight: bold;
-        color: #FFFFFF !important;
+
+    .truelove-title {
+        font-family: 'Georgia', serif; font-size: 58px; font-weight: bold;
+        color: #D4AF37 !important; text-align: center; margin-bottom: 0px;
+    }
+    .crownline-subtitle {
+        font-family: 'Helvetica Neue', sans-serif; font-size: 20px; text-align: center; margin-top: -10px;
+    }
+    div[data-testid="stRadio"] > div {
+        background-color: rgba(5, 15, 30, 0.85); padding: 15px;
+        border-radius: 15px; border: 2px solid #D4AF37; margin-top: 10px;
     }
     .card {
-        background-color: rgba(255, 255, 255, 0.05);
-        padding: 25px;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 20px;
+        background-color: rgba(255, 255, 255, 0.05); padding: 25px;
+        border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 20px;
     }
     .spec-card {
-        background-color: rgba(212, 175, 55, 0.1);
-        padding: 20px;
-        border-radius: 12px;
-        border-left: 6px solid #D4AF37;
+        background-color: rgba(212, 175, 55, 0.1); padding: 20px;
+        border-radius: 12px; border-left: 6px solid #D4AF37; line-height: 1.6;
     }
     h2, h3, b { color: #D4AF37 !important; }
-    input { color: #000000 !important; }
     header, footer { visibility: hidden; }
-    [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
+    
+    [data-testid="stTable"] {
+        background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; border-radius: 10px !important;
+    }
     [data-testid="stTable"] td, [data-testid="stTable"] th { color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Speicher
+# Speicher initialisieren
 if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'service_historie' not in st.session_state: st.session_state.service_historie = []
 if 'rechnungs_bilder' not in st.session_state: st.session_state.rechnungs_bilder = {}
@@ -98,17 +91,24 @@ if menu == "⛽ Tanken":
     t_pr = st.number_input("CHF / L", value=2.15, format="%.2f")
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
-    if st.button("Speichern ✅"):
+    c1, c2 = st.columns(2)
+    if c1.button("Speichern ✅"):
         if t_lit > 0:
-            st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m.%Y"), "Liter": f"{t_lit:.2f}", "CHF/L": f"{t_pr:.2f}", "Total CHF": f"{(t_lit*t_pr):.2f}", "Wer": t_wer})
+            st.session_state.tank_daten.append({
+                "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Liter": f"{t_lit:.2f}", "CHF/L": f"{t_pr:.2f}",
+                "Total CHF": f"{(t_lit*t_pr):.2f}", "Wer": t_wer
+            })
             st.rerun()
+    if c2.button("Löschen 🗑️"):
+        if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
     
     if st.session_state.tank_daten:
-        df_t = pd.DataFrame(st.session_state.tank_daten)
-        st.table(df_t)
+        df_tank = pd.DataFrame(st.session_state.tank_daten)
+        st.table(df_tank)
         st.write("### 📊 Abrechnung")
-        df_t["Total CHF"] = df_t["Total CHF"].astype(float)
-        ausg = df_t.groupby("Wer")["Total CHF"].sum()
+        df_tank["Total CHF"] = df_tank["Total CHF"].astype(float)
+        ausg = df_tank.groupby("Wer")["Total CHF"].sum()
         st.info(f"Marc: **CHF {ausg.get('Marc', 0.0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne', 0.0):,.2f}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -121,42 +121,51 @@ elif menu == "⚙️ Motor & Service":
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 431 PS (317 kW) @ 4400-4800 RPM<br>
     <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
+    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
     <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
-    <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40<br>
+    <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
-    st.write("### 🔧 Service Log & Rechnung")
+    st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
     s_foto = st.file_uploader("Rechnung hochladen", type=['png', 'jpg', 'jpeg'])
     
-    if st.button("Eintrag speichern"):
+    c3, c4 = st.columns(2)
+    if c3.button("Eintrag speichern"):
         if s_arbeit:
             id_gen = datetime.now().strftime("%H%M%S")
-            st.session_state.service_historie.append({"ID": id_gen, "Datum": datetime.now().strftime("%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": f"{s_preis:.2f}", "Rechnung": "✅" if s_foto else "❌"})
+            st.session_state.service_historie.append({
+                "ID": id_gen, "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Arbeit": s_arbeit, "CHF": f"{s_preis:.2f}", "Rechnung": "✅" if s_foto else "❌"
+            })
             if s_foto: st.session_state.rechnungs_bilder[id_gen] = Image.open(s_foto)
             st.rerun()
+    if c4.button("Löschen 🗑️"):
+        if st.session_state.service_historie: st.session_state.service_historie.pop(); st.rerun()
     
     if st.session_state.service_historie:
         st.table(pd.DataFrame(st.session_state.service_historie).drop(columns=["ID"]))
-        for img in st.session_state.rechnungs_bilder.values():
-            st.image(img, width=400)
+        for k, img in st.session_state.rechnungs_bilder.items():
+            st.image(img, caption=f"Rechnung Service {k}", width=400)
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Fixkosten & Übersicht")
-    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.00, format="%.2f")
-    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.00, format="%.2f")
-    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.00, format="%.2f")
-    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.00, format="%.2f")
+    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.0, format="%.2f")
+    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.0, format="%.2f")
+    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.0, format="%.2f")
+    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.0, format="%.2f")
     
     sprit_sum = sum(float(i['Total CHF']) for i in st.session_state.tank_daten)
     serv_sum = sum(float(i['CHF']) for i in st.session_state.service_historie)
     fix_sum = f_winter + f_platz + f_steuer + f_vers
     
+    st.write("---")
+    st.metric("Kosten Service Log", f"CHF {serv_sum:,.2f}")
     col1, col2 = st.columns(2)
     col1.metric("TOTAL OHNE BENZIN", f"CHF {(fix_sum + serv_sum):,.2f}")
-    col2.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
+    col2.metric("TOTAL INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
     st.info(f"⛽ Reine Benzinkosten: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
