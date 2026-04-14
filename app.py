@@ -8,12 +8,21 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
-    /* GLOBALE REGEL: Jede Schrift in Weiss */
-    * { color: #FFFFFF !important; }
+    /* GLOBALE FARBEN */
+    .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    .stApp { background-color: #050A14; }
+    /* ALLE Schriften standardmäßig Weiss */
+    .stApp, label, p, span, div { color: #FFFFFF; }
+
+    /* SCHWARZE SCHRIFT in weissen/hellen Feldern (Inputs, Tabellen) */
+    input, select, textarea, [data-testid="stTable"] td, [data-testid="stTable"] th { 
+        color: #000000 !important; 
+    }
     
-    /* Titel in Gold (Ausnahme für den Namen) */
+    /* Header & Footer ausblenden */
+    #MainMenu, header, footer { visibility: hidden; }
+    [data-testid="stDecoration"] { display: none; }
+
     .truelove-title {
         font-family: 'Georgia', serif;
         font-size: 58px;
@@ -33,27 +42,27 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* Das Menüband: Breite 100%, Schrift Weiss, Icons dominant */
+    /* MENÜ-BAND: Icons dominant, Breite 100%, KEIN zweiter Balken */
     div[data-testid="stRadio"] > div {
-        background-color: rgba(5, 15, 30, 0.85);
-        padding: 20px 10px;
-        border-radius: 15px;
-        border: 2px solid #D4AF37;
+        background-color: rgba(5, 15, 30, 0.85) !important;
+        padding: 20px 10px !important;
+        border-radius: 15px !important;
+        border: 2px solid #D4AF37 !important;
         backdrop-filter: blur(10px);
-        margin-top: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        margin-top: 10px !important;
         display: flex;
         justify-content: space-around;
-        width: 100%;
+        width: 100% !important;
     }
+    
+    /* Entfernt den grauen Unterstrich/Balken unter dem Radio-Widget */
+    div[data-testid="stRadio"] { border: none !important; }
 
-    /* Entfernt das zweite Band / Trennlinien unter dem Menü */
-    hr { display: none; }
-    div[data-testid="stHorizontalBlock"] { border: none !important; }
-
+    /* DOMINANTE ICONS & WEISSE SCHRIFT IM MENÜ */
     div[data-testid="stRadio"] label {
         font-weight: bold !important;
-        font-size: 32px !important;
+        font-size: 32px !important; /* GROSSE ICONS */
+        color: #FFFFFF !important;
     }
 
     .card {
@@ -69,16 +78,9 @@ st.markdown("""
         padding: 20px; 
         border-radius: 12px; 
         border-left: 6px solid #D4AF37;
-        line-height: 1.6;
     }
     
-    /* Gold-Akzente für Überschriften beibehalten */
     h2, h3, .spec-card b { color: #D4AF37 !important; }
-    
-    .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
-    
-    /* Versteckt das Streamlit-Header-Menü oben */
-    #MainMenu, header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -94,10 +96,10 @@ st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_h
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION (Nur noch ein Band vorhanden)
+# NAVIGATION
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
-                key="nav_radio_clean",
+                key="nav_radio_final",
                 horizontal=True,
                 label_visibility="collapsed")
 
@@ -127,8 +129,7 @@ elif menu == "⚙️ Motor & Service":
     st.markdown("""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO<br>
     <b>Leistung:</b> 425 HP (317 kW)<br>
-    <b>Hubraum:</b> 8.1 Liter V8<br>
-    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2
+    <b>Hubraum:</b> 8.1 Liter V8
     </div>""", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -139,4 +140,4 @@ elif menu == "💰 Finanzen":
     st.metric("Benzinkosten Total", f"CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.3 - White Font Edition")
+st.caption("Truelove Bridge v24.4 - High Contrast Fix")
