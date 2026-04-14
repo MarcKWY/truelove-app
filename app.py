@@ -1,87 +1,109 @@
 import streamlit as st
-from datetime import datetime
 
-# --- SETUP & MARITIMES DESIGN ---
-st.set_page_config(page_title="Truelove Dashboard", page_icon="🛥️", layout="wide")
+# --- HIGH-END UI SETUP ---
+st.set_page_config(page_title="Truelove Premium", layout="wide")
 
-# CSS für Hintergrundbild, Transparenz und Farben
+# CSS für das "App-Gefühl" (inspiriert von den Mockups oben)
 st.markdown("""
     <style>
-    /* Hintergrundbild (Wasser-Textur) */
+    /* Hintergrund: Dunkles Marine-Blau mit Verlauf */
     .stApp {
-        background-image: url("https://unsplash.com");
-        background-attachment: fixed;
-        background-size: cover;
+        background: linear-gradient(180deg, #041021 0%, #0b1e3b 100%);
+        color: #ffffff;
     }
     
-    /* Boxen halbdurchsichtig (Frosted Glass Effekt) */
-    div.stMetric, div[data-testid="stExpander"], div.stTabs, .st-emotion-cache-1kyx600 {
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
-        color: #002d5a !important;
+    /* Karten-Design (Glassmorphism) */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        backdrop-filter: blur(10px);
     }
     
-    /* Texte anpassen */
-    h1, h2, h3 { color: #ffffff !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-    p, label { color: #002d5a !important; font-weight: bold; }
+    .metric-value {
+        font-size: 28px;
+        font-weight: bold;
+        color: #00d4ff;
+        margin-bottom: 5px;
+    }
     
-    /* Tabs Design */
-    .stTabs [data-baseweb="tab-list"] { background-color: rgba(0, 45, 90, 0.8); border-radius: 10px; }
-    .stTabs [data-baseweb="tab"] { color: white !important; }
+    .metric-label {
+        font-size: 14px;
+        color: #a0a0a0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Buttons stylen */
+    .stButton>button {
+        background: linear-gradient(90deg, #00d4ff 0%, #005f73 100%);
+        border: none;
+        color: white;
+        border-radius: 30px;
+        padding: 10px 25px;
+        font-weight: bold;
+        width: 100%;
+    }
+
+    /* Tabs verstecken/stylen */
+    .stTabs [data-baseweb="tab-list"] { background-color: transparent; }
+    .stTabs [data-baseweb="tab"] { color: #888; font-size: 18px; }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] { color: #00d4ff; border-bottom-color: #00d4ff; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- HEADER ---
-col_logo, col_title = st.columns([1, 2])
-with col_logo:
-    st.image("https://crownline.com", width=220)
+# --- APP STRUKTUR ---
+st.image("https://crownline.com", width=180)
+st.markdown("<h1 style='text-align: center; margin-top:-50px;'>TRUELOVE</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #00d4ff;'>CROWNLINE 286 SC | V8 496 MAG</p>", unsafe_allow_html=True)
 
-with col_title:
-    st.title("⚓ TRUELOVE: Crownline 286 SC")
-    st.markdown("<p style='color:white; font-size:1.2em;'>V8 496 MAG Power Dashboard</p>", unsafe_allow_html=True)
+# Top Status Bar (wie in einer echten App)
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.markdown('<div class="metric-card"><div class="metric-value">220 L</div><div class="metric-label">Tankinhalt</div></div>', unsafe_allow_html=True)
+with c2:
+    st.markdown('<div class="metric-card"><div class="metric-value">42.8 kn</div><div class="metric-label">Top Speed</div></div>', unsafe_allow_html=True)
+with c3:
+    st.markdown('<div class="metric-card"><div class="metric-value">45 h</div><div class="metric-label">Bis Service</div></div>', unsafe_allow_html=True)
 
-# --- BILDER-GALERIE (Macht es lebendig) ---
-col_img1, col_img2 = st.columns(2)
-with col_img1:
-    st.image("https://boats.com", caption="Crownline SC Series", use_container_width=True)
-with col_img2:
-    st.image("https://pboat.com", caption="8.2L Mercruiser V8", use_container_width=True)
+st.write("##")
 
-# --- NAVIGATION ---
-tab1, tab2, tab3 = st.tabs(["🚀 Reise-Planer", "💰 Kosten (CHF)", "📋 Bordbuch & Technik"])
+# Hauptbereich
+tabs = st.tabs(["Navigation", "Finanzen", "Checkliste"])
 
-with tab1:
-    c1, c2 = st.columns(2)
-    with c1:
-        st.subheader("Fahrt-Kalkulation")
-        distanz = st.number_input("Distanz (nm)", value=15.0)
-        speed = st.slider("Speed (kn)", 5, 45, 22)
-    with c2:
-        sprit_preis = 2.15
-        verbrauch_h = 55.0
-        zeit = distanz / speed
-        liter = zeit * verbrauch_h
-        st.metric("Spritbedarf", f"{liter:.1f} Liter")
-        st.metric("Kosten", f"CHF {liter * sprit_preis:.2f}")
+with tabs[0]:
+    col_left, col_right = st.columns([2,1])
+    with col_left:
+        st.markdown("### Reise-Kalkulation")
+        dist = st.slider("Distanz (nm)", 0, 100, 25)
+        speed = st.slider("Speed (kn)", 5, 50, 24)
+        
+    with col_right:
+        verbrauch = (dist / speed) * 55
+        st.markdown(f"""
+            <div class="metric-card" style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff;">
+                <div class="metric-label">Vorauss. Verbrauch</div>
+                <div class="metric-value" style="color: #ffffff;">{verbrauch:.1f} L</div>
+                <div class="metric-label" style="margin-top:10px;">Kosten</div>
+                <div class="metric-value" style="color: #ffffff;">CHF {verbrauch*2.10:.2f}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
-with tab2:
-    st.subheader("Finanzen")
-    v = st.number_input("Versicherung/Jahr (CHF)", value=1100)
-    s = st.number_input("Steuern (CHF)", value=350)
-    w = st.number_input("Winterlager (CHF)", value=2200)
-    total = v + s + w
-    st.metric("Total Fixkosten", f"CHF {total:,.2f}")
-    st.metric("Monatliche Sparrate", f"CHF {total/12:.2f}")
+with tabs[1]:
+    st.markdown("### Kostenübersicht (CHF)")
+    k1, k2 = st.columns(2)
+    with k1:
+        v = st.number_input("Versicherung", value=1100)
+        w = st.number_input("Winterlager", value=2200)
+    with k2:
+        total = v + w + 350
+        st.markdown(f'<div class="metric-card"><div class="metric-label">Total / Jahr</div><div class="metric-value">CHF {total}</div></div>', unsafe_allow_html=True)
 
-with tab3:
-    st.subheader("Wartungs-Check")
-    st.info("Nächster Service: In 45 Betriebsstunden fällig.")
-    st.checkbox("Motoröl-Stand okay")
-    st.checkbox("Batterien geladen")
-    st.checkbox("Kühlwasser-Check")
-    st.button("Törn im Logbuch speichern")
-
-st.write("---")
-st.caption(f"Truelove Cloud v3.0 | {datetime.now().year} | Design: Ocean-Blue")
+with tabs[2]:
+    st.checkbox("Motorraum-Check (V8)")
+    st.checkbox("Batterie-Hauptschalter EIN")
+    st.checkbox("Mercruiser App synchronisiert")
+    if st.button("Törn im Logbuch speichern"):
+        st.balloons()
