@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import pandas as pd
 from datetime import datetime
-from PIL import Image
 
 # --- SETUP ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
@@ -11,7 +10,7 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* TITEL: NOCH ETWAS KLEINER (55px) UND GOLD */
+    /* TITEL: GOLD UND 55px */
     .truelove-title {
         font-family: 'Georgia', serif !important;
         font-size: 55px !important;
@@ -33,25 +32,6 @@ st.markdown("""
         opacity: 0.8;
     }
 
-    /* UPLOAD FENSTER FIX: GOLDENER RAHMEN & KONTRAST-HINTERGRUND */
-    [data-testid="stFileUploadDropzone"] {
-        background-color: #1a1a1a !important; /* Dunkler Hintergrund */
-        border: 2px solid #D4AF37 !important; /* Goldener Rahmen */
-        border-radius: 10px !important;
-        min-height: 100px !important;
-    }
-    
-    /* Erzwingt weisse Schrift für "Drag and drop file here" */
-    [data-testid="stFileUploadDropzone"] div div span {
-        color: #D4AF37 !important;
-        font-weight: bold !important;
-    }
-    
-    /* Erzwingt weisse Schrift für das Limit (200MB) */
-    [data-testid="stFileUploadDropzone"] div div small {
-        color: #FFFFFF !important;
-    }
-
     /* ALLGEMEINES STYLING */
     label, .stRadio label, p, span {
         color: #FFFFFF !important;
@@ -67,6 +47,7 @@ st.markdown("""
         color: white !important;
         border: 1px solid #D4AF37 !important;
         border-radius: 10px !important;
+        font-size: 20px !important;
     }
 
     div[data-testid="stRadio"] > div {
@@ -88,6 +69,7 @@ st.markdown("""
         padding: 20px;
         border-radius: 12px;
         border-left: 6px solid #D4AF37;
+        line-height: 1.6;
     }
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
@@ -104,7 +86,6 @@ st.markdown("""
 # Speicher initialisieren
 if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'service_historie' not in st.session_state: st.session_state.service_historie = []
-if 'rechnungs_bilder' not in st.session_state: st.session_state.rechnungs_bilder = {}
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
@@ -162,25 +143,21 @@ elif menu == "⚙️ Motor & Service":
     st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
-    s_foto = st.file_uploader("Rechnung hochladen", type=['png', 'jpg', 'jpeg'])
     
     c3, c4 = st.columns(2)
     if c3.button("Eintrag speichern"):
         if s_arbeit:
-            id_gen = datetime.now().strftime("%H%M%S")
             st.session_state.service_historie.append({
-                "ID": id_gen, "Datum": datetime.now().strftime("%d.%m.%Y"), 
-                "Arbeit": s_arbeit, "CHF": f"{s_preis:.2f}", "Rechnung": "✅" if s_foto else "❌"
+                "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Arbeit": s_arbeit, 
+                "CHF": f"{s_preis:.2f}"
             })
-            if s_foto: st.session_state.rechnungs_bilder[id_gen] = Image.open(s_foto)
             st.rerun()
     if c4.button("Löschen 🗑️"):
         if st.session_state.service_historie: st.session_state.service_historie.pop(); st.rerun()
     
     if st.session_state.service_historie:
-        st.table(pd.DataFrame(st.session_state.service_historie).drop(columns=["ID"]))
-        for k, img in st.session_state.rechnungs_bilder.items():
-            st.image(img, caption=f"Rechnung Service {k}", width=400)
+        st.table(pd.DataFrame(st.session_state.service_historie))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
