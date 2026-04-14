@@ -3,24 +3,63 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: MODERN & VOLLSTÄNDIG ---
-st.set_page_config(page_title="Truelove Master", layout="centered")
+# --- SETUP: LUXURY LIGHT DESIGN ---
+st.set_page_config(page_title="Truelove Dashboard", layout="centered")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #050a14; color: #ffffff; }
-    .card {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        margin-bottom: 25px;
-        backdrop-filter: blur(10px);
+    /* Heller, edler Hintergrund für maximale Lesbarkeit */
+    .stApp { background-color: #F8FAFC; color: #0F172A; }
+    
+    /* Edle Serifenschrift für Truelove */
+    .truelove-title {
+        font-family: 'Georgia', serif;
+        font-size: 65px;
+        font-weight: bold;
+        color: #002D5A;
+        text-align: center;
+        margin-bottom: 0px;
+        letter-spacing: 4px;
     }
-    .spec-card { background-color: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; color: white; border-left: 5px solid #D4AF37; }
-    h1, h2, h3 { color: #D4AF37 !important; font-family: 'Helvetica Neue', sans-serif; letter-spacing: 2px; }
-    b { color: #D4AF37; }
-    .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 10px !important; padding: 10px !important; }
+    
+    .crownline-subtitle {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 24px;
+        color: #D4AF37;
+        text-align: center;
+        margin-top: -10px;
+        font-weight: 300;
+        letter-spacing: 2px;
+    }
+
+    /* Grössere Navigations-Schrift */
+    div[data-testid="stWidgetLabel"] p {
+        font-size: 22px !important;
+        font-weight: bold !important;
+        color: #002D5A !important;
+    }
+
+    /* Karten-Design mit Kontrast */
+    .card {
+        background-color: #FFFFFF;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #E2E8F0;
+        margin-bottom: 25px;
+    }
+    
+    .spec-card { 
+        background-color: #F1F5F9; 
+        padding: 20px; 
+        border-radius: 12px; 
+        color: #0F172A; 
+        border-left: 6px solid #D4AF37; 
+        font-size: 1.1em;
+    }
+    
+    b { color: #002D5A; }
+    h2, h3 { color: #002D5A !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -29,37 +68,41 @@ if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'service_historie' not in st.session_state: st.session_state.service_historie = []
 
 # --- HEADER ---
-st.markdown("<h1 style='text-align: center;'>TRUELOVE</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
+st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
+
+# Erstes Bild etwas grösser (Nutzt volle Breite des Containers)
 if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True, caption="Crownline 286 SC")
+    st.image("boot_gross.jpg", use_container_width=True)
+
+st.write("##")
+
+# --- NAVIGATION (GRÖSSER) ---
+menu = st.radio("BEREICH WÄHLEN", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Kosten & Finanzen"], horizontal=True)
 
 st.write("---")
 
-# --- NAVIGATION ---
-menu = st.radio("Bereich wählen", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Kosten & Finanzen"], horizontal=True)
-
 if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=400)
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=450)
     
-    with st.container():
-        t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
-        t_pr = st.number_input("CHF / L", value=2.15, key="t_pr")
-        t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
-        
-        c1, c2 = st.columns(2)
-        if c1.button("Speichern ✅", use_container_width=True):
-            if t_lit > 0:
-                st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
-                st.rerun()
-        if c2.button("Letzten löschen 🗑️", use_container_width=True):
-            if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
+    t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
+    t_pr = st.number_input("CHF / L", value=2.15, key="t_pr")
+    t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
+    
+    c1, c2 = st.columns(2)
+    if c1.button("Speichern ✅", use_container_width=True):
+        if t_lit > 0:
+            st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
+            st.rerun()
+    if c2.button("Letzten löschen 🗑️", use_container_width=True):
+        if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
 
     if st.session_state.tank_daten:
         df_t = pd.DataFrame(st.session_state.tank_daten)
-        st.write("### Abrechnung Marc & Fabienne")
+        st.write("### Abrechnung")
         ausg = df_t.groupby("Wer")["Total"].sum()
-        st.write(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
+        st.info(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
         st.table(df_t)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -79,14 +122,14 @@ elif menu == "⚙️ Motor & Service":
         st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
         st.rerun()
         
-    st.write("### 📂 Rechnungs-Upload")
-    up = st.file_uploader("Foto der Rechnung", type=['jpg', 'jpeg', 'png'])
-    if up: st.image(up, caption="Hochgeladenes Dokument", use_container_width=True)
+    st.write("### 📂 Dokumente")
+    up = st.file_uploader("Rechnung hochladen", type=['jpg', 'jpeg', 'png'])
+    if up: st.image(up, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Kosten & Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.write("### Fixkosten & Saison-Total")
+    st.write("### Fixkosten")
     c1, c2 = st.columns(2)
     k_v = c1.number_input("Versicherung (CHF)", value=1150.0)
     k_p = c2.number_input("Bootsplatz (CHF)", value=1500.0)
@@ -102,4 +145,4 @@ elif menu == "💰 Kosten & Finanzen":
     st.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {fix_sum + serv_sum + sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Master Build v23.0")
+st.caption(f"Truelove Management v23.1 | {datetime.now().year}")
