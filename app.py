@@ -11,7 +11,41 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* TEXT-STYLING */
+    /* TITEL: MASSIV GROSS UND GOLD ERZWUNGEN */
+    .truelove-title {
+        font-family: 'Georgia', serif !important;
+        font-size: 90px !important;
+        font-weight: bold !important;
+        color: #D4AF37 !important;
+        text-align: center !important;
+        margin-bottom: 0px !important;
+        letter-spacing: 5px !important;
+        text-shadow: 2px 2px 15px rgba(212, 175, 55, 0.4) !important;
+        display: block !important;
+    }
+    
+    .crownline-subtitle {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 20px;
+        text-align: center;
+        margin-top: -10px;
+        color: #FFFFFF;
+    }
+
+    /* UPLOAD FENSTER: FARBE ERZWINGEN (HELLGOLD) */
+    [data-testid="stFileUploadDropzone"] {
+        background-color: #D4AF37 !important;
+        border: 2px dashed #FFFFFF !important;
+        border-radius: 10px !important;
+    }
+    /* Text im Upload-Feld schwarz für Lesbarkeit */
+    [data-testid="stFileUploadDropzone"] div div span,
+    [data-testid="stFileUploadDropzone"] div div small {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+
+    /* TEXT-STYLING ALLGEMEIN */
     label, .stRadio label, p, span {
         color: #FFFFFF !important;
         font-size: 22px !important;
@@ -21,16 +55,6 @@ st.markdown("""
     input { color: #000000 !important; font-size: 18px !important; }
     img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
     
-    /* UPLOAD FENSTER: HELLGOLD HINTERGRUND / SCHWARZE SCHRIFT */
-    [data-testid="stFileUploadDropzone"] {
-        background-color: #D4AF37 !important;
-        border: 2px dashed #FFFFFF !important;
-    }
-    [data-testid="stFileUploadDropzone"] * {
-        color: #000000 !important;
-        font-weight: bold !important;
-    }
-
     .stButton>button {
         background-color: #8B6914 !important;
         color: white !important;
@@ -38,38 +62,34 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
-    /* TITEL: GRÖSSER UND GOLDEN */
-    .truelove-title {
-        font-family: 'Georgia', serif; 
-        font-size: 85px !important; 
-        font-weight: bold;
-        color: #D4AF37 !important; 
-        text-align: center; 
-        margin-bottom: 0px;
-        letter-spacing: 5px;
-        text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-    }
-    
-    .crownline-subtitle {
-        font-family: 'Helvetica Neue', sans-serif; font-size: 20px; text-align: center; margin-top: -10px;
-    }
     div[data-testid="stRadio"] > div {
-        background-color: rgba(5, 15, 30, 0.85); padding: 15px;
-        border-radius: 15px; border: 2px solid #D4AF37; margin-top: 10px;
+        background-color: rgba(5, 15, 30, 0.85);
+        padding: 15px;
+        border-radius: 15px;
+        border: 2px solid #D4AF37;
+        margin-top: 10px;
     }
     .card {
-        background-color: rgba(255, 255, 255, 0.05); padding: 25px;
-        border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 20px;
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 25px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 20px;
     }
     .spec-card {
-        background-color: rgba(212, 175, 55, 0.1); padding: 20px;
-        border-radius: 12px; border-left: 6px solid #D4AF37; line-height: 1.6;
+        background-color: rgba(212, 175, 55, 0.1);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 6px solid #D4AF37;
+        line-height: 1.6;
     }
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
     
     [data-testid="stTable"] {
-        background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; border-radius: 10px !important;
+        background-color: #0A1E3C !important;
+        border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important;
     }
     [data-testid="stTable"] td, [data-testid="stTable"] th { color: white !important; }
     </style>
@@ -81,7 +101,7 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 if 'rechnungs_bilder' not in st.session_state: st.session_state.rechnungs_bilder = {}
 
 # --- HEADER ---
-st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
+st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
 if os.path.exists("boot_gross.jpg"): 
