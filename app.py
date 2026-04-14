@@ -17,12 +17,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Daten-Speicher initialisieren
 if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'zubehoer' not in st.session_state: st.session_state.zubehoer = []
 
 # --- HEADER ---
-col_l, col_r = st.columns([1, 4])
+col_l, col_r = st.columns()
 with col_l:
     for ext in ["png", "jpg", "jpeg", "PNG"]:
         if os.path.exists(f"logo.{ext}"):
@@ -38,38 +37,31 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["⛽ Tanken", "⚙️ Motor", "🔧 Serv
 # TAB 1: TANKEN
 with tab1:
     st.subheader("⛽ Tank-Management")
-    if os.path.exists("tanken.jpg"): 
-        st.image("tanken.jpg", width=550)
-    
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=550)
     col_in, col_res = st.columns(2)
     with col_in:
         with st.container(border=True):
-            t_datum = st.date_input("Datum", datetime.now(), key="tank_date_v19")
-            t_liter = st.number_input("Liter (L)", min_value=0.0, step=10.0, key="tank_lit_v19")
-            t_preis = st.number_input("CHF / L", value=2.15, key="tank_price_v19")
-            t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="tank_who_v19")
-            
+            t_datum = st.date_input("Datum", datetime.now(), key="t_date")
+            t_liter = st.number_input("Liter (L)", min_value=0.0, step=10.0, key="t_lit")
+            t_preis = st.number_input("CHF / L", value=2.15, key="t_price")
+            t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="t_who")
             c_btn1, c_btn2 = st.columns(2)
             with c_btn1:
-                if st.button("Speichern ✅", use_container_width=True, key="save_tank"):
+                if st.button("Speichern ✅", use_container_width=True, key="s_t"):
                     if t_liter > 0:
                         st.session_state.tank_daten.append({"Datum": t_datum.strftime("%d.%m.%Y"), "Liter": t_liter, "Total": round(t_liter * t_preis, 2), "Zahler": t_wer})
                         st.rerun()
             with c_btn2:
-                if st.button("Letzten löschen 🗑️", use_container_width=True, key="del_tank"):
-                    if st.session_state.tank_daten:
-                        st.session_state.tank_daten.pop()
-                        st.rerun()
+                if st.button("Letzten löschen 🗑️", use_container_width=True, key="d_t"):
+                    if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
     with col_res:
         if st.session_state.tank_daten:
             df = pd.DataFrame(st.session_state.tank_daten)
             st.metric("Benzin Saison (CHF)", f"{df['Total'].sum():,.2f}")
             ausgaben = df.groupby("Zahler")["Total"].sum()
-            c_m, c_f = st.columns(2)
-            with c_m:
-                st.markdown(f"<div class='zahler-box'><b>Marc:</b><br>CHF {ausgaben.get('Marc', 0.0):,.2f}</div>", unsafe_allow_html=True)
-            with c_f:
-                st.markdown(f"<div class='zahler-box'><b>Fabienne:</b><br>CHF {ausgaben.get('Fabienne', 0.0):,.2f}</div>", unsafe_allow_html=True)
+            cm, cf = st.columns(2)
+            with cm: st.markdown(f"<div class='zahler-box'><b>Marc:</b><br>CHF {ausgaben.get('Marc', 0.0):,.2f}</div>", unsafe_allow_html=True)
+            with cf: st.markdown(f"<div class='zahler-box'><b>Fabienne:</b><br>CHF {ausgaben.get('Fabienne', 0.0):,.2f}</div>", unsafe_allow_html=True)
             st.table(df)
 
 # TAB 2: MOTOR
@@ -77,26 +69,12 @@ with tab2:
     st.subheader("⚙️ Komplette Motor-Daten")
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        st.markdown("""
-        <div class="spec-card">
-        <h3>Mercruiser 496 MAG HO</h3>
-        <ul>
-            <li><b>Leistung:</b> 317 kW / 431 PS</li>
-            <li><b>Hubraum:</b> 8.2 Liter (496 cid)</li>
-            <li><b>Zylinder:</b> V8 Big Block</li>
-            <li><b>Kühlung:</b> Zweikreissystem (Closed Cooling)</li>
-            <li><b>Drehzahl (WOT):</b> 4600 - 5000 RPM</li>
-            <li><b>Einspritzung:</b> Multi-Point Injection (MPI)</li>
-            <li><b>Zündfolge:</b> 1-8-4-3-6-5-7-2</li>
-            <li><b>Ölkapazität:</b> ca. 8.5 Liter</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div class="spec-card"><h3>Mercruiser 496 MAG HO</h3><ul><li><b>Leistung:</b> 317 kW / 431 PS</li><li><b>Hubraum:</b> 8.2 Liter</li><li><b>Zylinder:</b> V8 Big Block</li><li><b>Kühlung:</b> Zweikreissystem</li><li><b>Drehzahl (WOT):</b> 4600-5000 RPM</li><li><b>Einspritzung:</b> MPI</li><li><b>Zündfolge:</b> 1-8-4-3-6-5-7-2</li><li><b>Ölkapazität:</b> 8.5 L</li></ul></div>""", unsafe_allow_html=True)
         if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
     with col_m2:
         st.write("### 📂 Durchgeführter Service")
-        uploaded_file = st.file_uploader("Rechnung/Foto hochladen", type=['jpg', 'jpeg', 'png'], key="file_up_v19")
-        if uploaded_file: st.image(uploaded_file, caption="Service Dokument", use_container_width=True)
+        up = st.file_uploader("Rechnung hochladen", type=['jpg', 'jpeg', 'png'], key="f_up")
+        if up: st.image(up, caption="Service Dokument", use_container_width=True)
 
 # TAB 3: SERVICE & ZUBEHÖR
 with tab3:
@@ -104,42 +82,45 @@ with tab3:
     col_s1, col_s2 = st.columns(2)
     with col_s1:
         st.write("### Service-Historie")
-        s_text = st.text_area("Arbeiten", key="serv_text_v19")
-        if st.button("Service speichern", key="btn_serv"): st.success("Eintrag gemerkt")
+        s_text = st.text_area("Arbeiten", key="s_txt")
+        if st.button("Service speichern"): st.success("Eintrag gemerkt")
     with col_s2:
         st.write("### Zubehör")
-        zub_n = st.text_input("Teil", key="zub_name_v19")
-        zub_p = st.number_input("Preis CHF", min_value=0.0, key="zub_price_v19")
-        if st.button("Zubehör speichern", key="btn_zub"):
+        zub_n = st.text_input("Teil", key="z_n")
+        zub_p = st.number_input("Preis CHF", min_value=0.0, key="z_p")
+        if st.button("Zubehör speichern"):
             st.session_state.zubehoer.append({"Teil": zub_n, "Preis": zub_p})
             st.rerun()
 
-# TAB 4: KOSTEN
+# TAB 4: KOSTEN (Angepasst: Separiert mit Icons)
 with tab4:
     st.subheader("💰 Kostenübersicht")
     col_k1, col_k2 = st.columns(2)
     with col_k1:
         st.image("https://wikimedia.org", width=50)
-        k_axa = st.number_input("AXA Versicherung", value=1150.0, key="axa_val_v19")
-        k_platz = st.number_input("Bootsplatz & Winter", value=3700.0, key="platz_val_v19")
-        k_steuer = st.number_input("Steuer", value=350.0, key="tax_val_v19")
+        k_axa = st.number_input("AXA Versicherung 🛡️", value=1150.0, key="k_axa")
+        k_platz = st.number_input("Bootsplatz ⚓", value=1500.0, key="k_platz")
+        k_winter = st.number_input("Winterlager ❄️", value=2200.0, key="k_winter")
+        k_steuer = st.number_input("Steuern 📜", value=350.0, key="k_tax")
+        
     with col_k2:
         sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
         zub_sum = sum(i['Preis'] for i in st.session_state.zubehoer)
-        fix = k_axa + k_platz + k_steuer
+        fix_basis = k_axa + k_platz + k_winter + k_steuer
         
-        st.metric("Fixkosten (Basis)", f"CHF {fix:,.2f}")
-        st.metric("Benzinkosten (Saison)", f"CHF {sprit_sum:,.2f}")
+        st.metric("Fixkosten (Basis) 🏗️", f"CHF {fix_basis:,.2f}")
+        st.metric("Service & Zubehör 🛠️", f"CHF {zub_sum:,.2f}")
+        st.metric("Benzin Saison ⛽", f"CHF {sprit_sum:,.2f}")
         
         st.write("---")
-        st.write(f"**Total ohne Benzin:** CHF {fix + zub_sum:,.2f}")
-        st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN (Inkl. Benzin)</h3><h1>CHF {fix + sprit_sum + zub_sum:,.2f}</h1></div>", unsafe_allow_html=True)
+        st.write(f"**Total ohne Benzin:** CHF {fix_basis + zub_sum:,.2f}")
+        st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN (Inkl. Benzin)</h3><h1>CHF {fix_basis + sprit_sum + zub_sum:,.2f}</h1></div>", unsafe_allow_html=True)
 
 # TAB 5: LOGBUCH
 with tab5:
     st.header("📖 Fahrtenbuch")
     if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", width=400)
-    st.text_input("Törn-Ziel", key="log_dest_v19")
+    st.text_input("Törn-Ziel", key="l_dest")
 
 st.write("---")
-st.caption("Truelove Fleet v19.3 | Stable Version")
+st.caption("Truelove Fleet v19.4 | Master Build")
