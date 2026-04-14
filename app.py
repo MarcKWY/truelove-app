@@ -8,13 +8,17 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #050A14; color: #FFFFFF; }
+    /* GLOBALE REGEL: Jede Schrift in Weiss */
+    * { color: #FFFFFF !important; }
     
+    .stApp { background-color: #050A14; }
+    
+    /* Titel in Gold (Ausnahme für den Namen) */
     .truelove-title {
         font-family: 'Georgia', serif;
         font-size: 58px;
         font-weight: bold;
-        color: #D4AF37;
+        color: #D4AF37 !important;
         text-align: center;
         letter-spacing: 5px;
         margin-bottom: 0px;
@@ -23,14 +27,13 @@ st.markdown("""
     .crownline-subtitle {
         font-family: 'Helvetica Neue', sans-serif;
         font-size: 20px;
-        color: #FFFFFF;
         text-align: center;
         margin-top: -10px;
         letter-spacing: 3px;
         font-weight: 200;
     }
 
-    /* Rahmenbreite 100% und Zentrierung */
+    /* Das Menüband: Breite 100%, Schrift Weiss, Icons dominant */
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85);
         padding: 20px 10px;
@@ -44,19 +47,13 @@ st.markdown("""
         width: 100%;
     }
 
-    /* DOMINANTE ICONS UND SCHRIFT */
+    /* Entfernt das zweite Band / Trennlinien unter dem Menü */
+    hr { display: none; }
+    div[data-testid="stHorizontalBlock"] { border: none !important; }
+
     div[data-testid="stRadio"] label {
-        color: #FFFFFF !important;
         font-weight: bold !important;
-        font-size: 32px !important; /* Massiv vergrössert für Dominanz */
-        flex-direction: column; /* Icon über dem Text (optional, falls gewünscht) */
-        gap: 10px;
-    }
-    
-    /* Vergrössert speziell die Emojis, falls der Browser sie separat anspricht */
-    div[data-testid="stRadio"] label p {
         font-size: 32px !important;
-        line-height: 1.2;
     }
 
     .card {
@@ -75,8 +72,13 @@ st.markdown("""
         line-height: 1.6;
     }
     
-    h2, h3, b { color: #D4AF37 !important; }
+    /* Gold-Akzente für Überschriften beibehalten */
+    h2, h3, .spec-card b { color: #D4AF37 !important; }
+    
     .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
+    
+    /* Versteckt das Streamlit-Header-Menü oben */
+    #MainMenu, header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -92,10 +94,10 @@ st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_h
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION
+# NAVIGATION (Nur noch ein Band vorhanden)
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
-                key="nav_photo_overlay",
+                key="nav_radio_clean",
                 horizontal=True,
                 label_visibility="collapsed")
 
@@ -103,55 +105,38 @@ menu = st.radio("BRIDGE CONTROL",
 if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⛽ Tank-Management")
-    if os.path.exists("tanken.jpg"): 
-        st.image("tanken.jpg", width=250)
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     
-    t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
+    t_lit = st.number_input("Liter", min_value=0.0, step=10.0)
     t_pr = st.number_input("CHF / L", value=2.15)
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
-    c1, c2 = st.columns(2)
-    if c1.button("Speichern ✅", use_container_width=True):
+    if st.button("Speichern ✅"):
         if t_lit > 0:
             st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
             st.rerun()
-    if c2.button("Letzten löschen 🗑️", use_container_width=True):
-        if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
-
+    
     if st.session_state.tank_daten:
-        df_t = pd.DataFrame(st.session_state.tank_daten)
-        ausg = df_t.groupby("Wer")["Total"].sum()
-        st.info(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
-        st.table(df_t)
+        st.table(pd.DataFrame(st.session_state.tank_daten))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⚙️ Vollständige Motordaten")
-    if os.path.exists("motor.jpg"): 
-        st.image("motor.jpg", width=250)
-
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
     st.markdown("""<div class='spec-card'>
-    <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
-    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
-    <b>Hubraum:</b> 8.1 Liter (496 cu in)<br>
-    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
-    <b>Ölkapazität:</b> ca. 8.5 Liter SAE 25W-40 Synthetic Blend<br>
-    <b>Kühlsystem:</b> Zweikreiskühlung (Closed Cooling)
+    <b>Modell:</b> Mercruiser 496 MAG HO<br>
+    <b>Leistung:</b> 425 HP (317 kW)<br>
+    <b>Hubraum:</b> 8.1 Liter V8<br>
+    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2
     </div>""", unsafe_allow_html=True)
-    
-    st.write("### 🔧 Service Log")
-    s_arbeit = st.text_input("Was wurde gemacht?")
-    s_preis = st.number_input("Kosten CHF", min_value=0.0)
-    if st.button("Eintrag speichern"):
-        st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
-        st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Finanzen")
-    # Finanz-Inhalt hier...
+    sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
+    st.metric("Benzinkosten Total", f"CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.2")
+st.caption("Truelove Bridge v24.3 - White Font Edition")
