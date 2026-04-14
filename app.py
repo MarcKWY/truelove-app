@@ -43,6 +43,14 @@ st.markdown("""
         margin-left: auto;
         margin-right: auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        
+        /* SCHRIFT AUF BLAUEM HINTERGRUND IN SILBER */
+        color: #C0C0C0 !important;
+    }
+    
+    /* Stellt sicher, dass auch die Radio-Button Texte in Silber erscheinen */
+    div[data-testid="stRadio"] label {
+        color: #C0C0C0 !important;
     }
 
     .card {
@@ -76,7 +84,7 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD (BLEIBT GROSS)
+# HAUPTBILD
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
@@ -95,7 +103,6 @@ if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⛽ Tank-Management")
     
-    # BILD VERKLEINERT AUF 300px
     if os.path.exists("tanken.jpg"): 
         st.image("tanken.jpg", width=300)
     
@@ -122,7 +129,6 @@ elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⚙️ Vollständige Motordaten")
     
-    # BILD VERKLEINERT AUF 300px
     if os.path.exists("motor.jpg"): 
         st.image("motor.jpg", width=300)
 
@@ -151,7 +157,7 @@ elif menu == "⚙️ Motor & Service":
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Finanzen")
-    # ... (Rest deines ursprünglichen Finanz-Codes)
+    # ... Finanzen Logik ...
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v23.8")
+st.caption("Truelove Bridge v23.9")
