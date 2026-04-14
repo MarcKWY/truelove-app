@@ -18,6 +18,16 @@ st.markdown("""
     input { color: #000000 !important; font-size: 18px !important; }
     img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
     
+    /* UPLOAD FENSTER FARBE ANPASSEN */
+    [data-testid="stFileUploadDropzone"] {
+        background-color: rgba(212, 175, 55, 0.1) !important;
+        border: 2px dashed #D4AF37 !important;
+        color: #FFFFFF !important;
+    }
+    [data-testid="stFileUploadDropzone"] div div span {
+        color: #FFFFFF !important;
+    }
+
     .stButton>button {
         background-color: #8B6914 !important;
         color: white !important;
@@ -118,8 +128,6 @@ if menu == "⛽ Tanken":
     if st.session_state.tank_daten:
         df_tank = pd.DataFrame(st.session_state.tank_daten)
         st.table(df_tank)
-        
-        # NEU: Wer hat wie viel bezahlt
         st.write("### 📊 Abrechnung Benzin")
         df_tank["Total CHF"] = df_tank["Total CHF"].astype(float)
         ausg = df_tank.groupby("Wer")["Total CHF"].sum()
@@ -134,7 +142,7 @@ elif menu == "⚙️ Motor & Service":
     
     st.markdown("""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
-    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
+    <b>Leistung:</b> 431 PS (317 kW) @ 4400-4800 RPM<br>
     <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
@@ -142,7 +150,6 @@ elif menu == "⚙️ Motor & Service":
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
     
-    # NEU: Foto Upload für Rechnung
     s_foto = st.file_uploader("Rechnung hochladen (Foto/PDF)", type=['png', 'jpg', 'jpeg', 'pdf'])
     
     c3, c4 = st.columns(2)
