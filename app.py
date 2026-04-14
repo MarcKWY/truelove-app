@@ -9,29 +9,15 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    
-    /* ALLE BESCHRIFTUNGEN (Labels, Marc/Fabienne, etc.) WEISS UND GRÖSSER */
     label, .stRadio label, div[data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
         font-size: 22px !important;
         font-weight: 500 !important;
     }
-
-    /* SPEZIELL FÜR DIE MENÜ-ICONS (Extrem groß wie gewünscht) */
-    div[data-testid="stRadio"] label {
-        font-size: 45px !important;
-    }
-
-    /* EINGABEFELDER: Schrift im Feld bleibt schwarz für Lesbarkeit, Label darüber weiss */
+    div[data-testid="stRadio"] label { font-size: 45px !important; }
     input { color: #000000 !important; font-size: 18px !important; }
-
-    /* BILDER MIT GOLDRAND */
-    img {
-        border: 2px solid #D4AF37 !important;
-        border-radius: 15px !important;
-    }
-
-    /* BUTTON DESIGN */
+    img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
+    
     .stButton>button {
         background-color: #8B6914 !important;
         color: white !important;
@@ -40,7 +26,6 @@ st.markdown("""
         font-size: 20px !important;
     }
 
-    /* Titel-Styling */
     .truelove-title {
         font-family: 'Georgia', serif;
         font-size: 58px;
@@ -55,7 +40,6 @@ st.markdown("""
         text-align: center;
         margin-top: -10px;
     }
-
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85);
         padding: 15px;
@@ -63,7 +47,6 @@ st.markdown("""
         border: 2px solid #D4AF37;
         margin-top: 10px;
     }
-
     .card {
         background-color: rgba(255, 255, 255, 0.05);
         padding: 25px;
@@ -71,7 +54,14 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
         margin-top: 20px;
     }
-
+    .spec-card {
+        background-color: rgba(212, 175, 55, 0.1);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 6px solid #D4AF37;
+        line-height: 1.6;
+    }
+    h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
@@ -99,9 +89,14 @@ if menu == "⛽ Tanken":
     t_pr = st.number_input("CHF / L", value=2.15)
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
-    if st.button("Speichern ✅"):
+    c1, c2 = st.columns(2)
+    if c1.button("Speichern ✅"):
         if t_lit > 0:
             st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
+            st.rerun()
+    if c2.button("Letzten Eintrag löschen 🗑️"):
+        if st.session_state.tank_daten:
+            st.session_state.tank_daten.pop()
             st.rerun()
     
     if st.session_state.tank_daten:
@@ -113,15 +108,29 @@ elif menu == "⚙️ Motor & Service":
     st.subheader("⚙️ Vollständige Motordaten")
     if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
     
-    st.markdown("""<div style='background-color: rgba(212, 175, 55, 0.1); padding: 15px; border-left: 5px solid #D4AF37; border-radius: 10px;'>
-    <b>Mercruiser 496 MAG HO</b><br>425 PS / 8.1L V8 Big Block<br>Zündfolge: 1-8-4-3-6-5-7-2</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class='spec-card'>
+    <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
+    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
+    <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
+    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
+    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
+    <b>Einspritzung:</b> Multi-Port EFI (PCM 555)<br>
+    <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
+    <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
     st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0)
-    if st.button("Eintrag speichern"):
-        st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
-        st.rerun()
+    
+    c3, c4 = st.columns(2)
+    if c3.button("Eintrag speichern"):
+        if s_arbeit:
+            st.session_state.service_historie.append({"Datum": datetime.now().strftime("%d.%m"), "Arbeit": s_arbeit, "CHF": s_preis})
+            st.rerun()
+    if c4.button("Letzten Service löschen 🗑️"):
+        if st.session_state.service_historie:
+            st.session_state.service_historie.pop()
+            st.rerun()
     
     if st.session_state.service_historie:
         st.table(pd.DataFrame(st.session_state.service_historie))
@@ -129,7 +138,29 @@ elif menu == "⚙️ Motor & Service":
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("💰 Finanzen")
+    st.subheader("💰 Fixkosten & Übersicht")
+    
+    # Eingabefelder für Fixkosten
+    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.0)
+    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.0)
+    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.0)
+    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.0)
+    
+    # Berechnungen
     sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
-    st.metric("Benzinkosten Total", f"CHF {sprit_sum:,.2f}")
+    serv_sum = sum(i['CHF'] for i in st.session_state.service_historie)
+    fix_sum = f_winter + f_platz + f_steuer + f_vers
+    
+    total_ohne_sprit = fix_sum + serv_sum
+    total_mit_sprit = total_ohne_sprit + sprit_sum
+    
+    st.write("---")
+    st.markdown(f"### ⚙️ Kosten Service: **CHF {serv_sum:,.2f}**")
+    st.write("---")
+    
+    col1, col2 = st.columns(2)
+    col1.metric("TOTAL OHNE BENZIN", f"CHF {total_ohne_sprit:,.2f}")
+    col2.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {total_mit_sprit:,.2f}")
+    
+    st.info(f"⛽ Davon reine Benzinkosten: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
