@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import pandas as pd
 from datetime import datetime
+from PIL import Image
 
 # --- SETUP ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
@@ -18,14 +19,17 @@ st.markdown("""
     input { color: #000000 !important; font-size: 18px !important; }
     img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
     
-    /* UPLOAD FENSTER FARBE ANPASSEN */
+    /* FARBANPASSUNG UPLOAD-FELD (Helleres Gold & Schwarze Schrift) */
     [data-testid="stFileUploadDropzone"] {
-        background-color: rgba(212, 175, 55, 0.1) !important;
-        border: 2px dashed #D4AF37 !important;
-        color: #FFFFFF !important;
+        background-color: #D4AF37 !important;
+        border: 2px dashed #FFFFFF !important;
+        border-radius: 15px !important;
     }
-    [data-testid="stFileUploadDropzone"] div div span {
-        color: #FFFFFF !important;
+    /* Text innerhalb der Dropzone auf Schwarz setzen */
+    [data-testid="stFileUploadDropzone"] div div span, 
+    [data-testid="stFileUploadDropzone"] div div small {
+        color: #000000 !important;
+        font-weight: bold !important;
     }
 
     .stButton>button {
@@ -89,6 +93,7 @@ st.markdown("""
 # Daten-Speicher
 if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'service_historie' not in st.session_state: st.session_state.service_historie = []
+if 'rechnungs_bilder' not in st.session_state: st.session_state.rechnungs_bilder = {}
 
 # --- HEADER ---
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
@@ -150,17 +155,21 @@ elif menu == "⚙️ Motor & Service":
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
     
-    s_foto = st.file_uploader("Rechnung hochladen (Foto/PDF)", type=['png', 'jpg', 'jpeg', 'pdf'])
+    s_foto = st.file_uploader("Rechnung hochladen", type=['png', 'jpg', 'jpeg'])
     
     c3, c4 = st.columns(2)
     if c3.button("Eintrag speichern"):
         if s_arbeit:
+            eintrag_id = datetime.now().strftime("%Y%m%d%H%M%S")
             st.session_state.service_historie.append({
+                "ID": eintrag_id,
                 "Datum": datetime.now().strftime("%d.%m.%Y"), 
                 "Arbeit": s_arbeit, 
                 "CHF": f"{s_preis:.2f}",
-                "Rechnung": "✅ Hochgeladen" if s_foto else "❌ Fehlt"
+                "Rechnung": "✅" if s_foto else "❌"
             })
+            if s_foto:
+                st.session_state.rechnungs_bilder[eintrag_id] = Image.open(s_foto)
             st.rerun()
     if c4.button("Löschen 🗑️"):
         if st.session_state.service_historie:
@@ -168,29 +177,16 @@ elif menu == "⚙️ Motor & Service":
             st.rerun()
     
     if st.session_state.service_historie:
-        st.table(pd.DataFrame(st.session_state.service_historie))
+        df_service = pd.DataFrame(st.session_state.service_historie)
+        st.table(df_service.drop(columns=["ID"])) # ID in Tabelle verstecken
+        
+        # Galerie der hochgeladenen Rechnungen
+        if st.session_state.rechnungs_bilder:
+            st.write("### 📸 Hochgeladene Rechnungen")
+            for key in st.session_state.rechnungs_bilder:
+                st.image(st.session_state.rechnungs_bilder[key], caption=f"Rechnung für Eintrag {key}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Fixkosten & Übersicht")
-    
-    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.00, format="%.2f")
-    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.00, format="%.2f")
-    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.00, format="%.2f")
-    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.00, format="%.2f")
-    
-    sprit_sum = sum(float(i['Total CHF']) for i in st.session_state.tank_daten)
-    serv_sum = sum(float(i['CHF']) for i in st.session_state.service_historie)
-    fix_sum = f_winter + f_platz + f_steuer + f_vers
-    
-    st.write("---")
-    st.markdown(f"### ⚙️ Kosten Service: **CHF {serv_sum:,.2f}**")
-    st.write("---")
-    
-    col1, col2 = st.columns(2)
-    col1.metric("TOTAL OHNE BENZIN", f"CHF {(fix_sum + serv_sum):,.2f}")
-    col2.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
-    
-    st.info(f"⛽ Davon reine Benzinkosten: CHF {sprit_sum:,.2f}")
-    st.markdown("</div>", unsafe_allow_html=True)
