@@ -3,12 +3,11 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: STEALTH NAUTICAL DESIGN ---
+# --- SETUP: BRIDGE DESIGN (CONTROL ON IMAGE) ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
-    /* Tiefer Dark-Mode für Yacht-Feeling */
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
     .truelove-title {
@@ -31,25 +30,27 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* Interaktive Navigation auf dem Foto */
-    .nav-overlay {
-        background-color: rgba(5, 10, 20, 0.7);
-        padding: 15px;
+    /* Container für die Navigation, die über dem Bild schwebt */
+    .nav-overlay-bridge {
+        background-color: rgba(5, 10, 20, 0.75);
+        padding: 10px;
         border-radius: 15px;
         border: 1px solid #D4AF37;
-        margin-top: -80px;
-        position: relative;
-        z-index: 100;
         backdrop-filter: blur(10px);
+        margin-top: -75px; /* Schiebt das Menü auf das Bild hoch */
+        position: relative;
+        z-index: 999;
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
     }
 
-    /* Karten-Design im Dark-Mode */
     .card {
         background-color: rgba(255, 255, 255, 0.05);
         padding: 25px;
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 20px;
+        margin-top: 15px;
     }
     
     .spec-card { 
@@ -61,7 +62,9 @@ st.markdown("""
     
     h2, h3, b { color: #D4AF37 !important; }
     .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
-    div[data-testid="stWidgetLabel"] p { color: #FFFFFF !important; font-size: 18px !important; }
+    
+    /* Radio Buttons zentrieren */
+    div[data-testid="stHorizontalBlock"] { justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -73,19 +76,20 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD
+# HAUPTBILD (DAS BOOT)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION DIREKT AUF / UNTER DEM BILD
-st.markdown("<div class='nav-overlay'>", unsafe_allow_html=True)
-menu = st.radio("ZENTRALE STEUERUNG", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True)
+# ZENTRALE STEUERUNG (SCHWEBEND AUF DEM BILD)
+st.markdown("<div class='nav-overlay-bridge'>", unsafe_allow_html=True)
+menu = st.radio("ZENTRALE STEUERUNG", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --- BEREICHE ---
 
 if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("⛽ Tank-Management")
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=400)
     
     t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
@@ -109,6 +113,7 @@ if menu == "⛽ Tanken":
 
 elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("⚙️ Motor & Service")
     st.markdown("""<div class='spec-card'><h3>Mercruiser 496 MAG HO</h3>
     • <b>Leistung:</b> 317 kW / 431 PS HO<br>• <b>Hubraum:</b> 8.2L V8 Big Block<br>
     • <b>Zündfolge:</b> 1-8-4-3-6-5-7-2</div>""", unsafe_allow_html=True)
@@ -125,6 +130,7 @@ elif menu == "⚙️ Motor & Service":
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("💰 Finanzen")
     k_v = st.number_input("Versicherung (CHF)", value=1150.0)
     k_p = st.number_input("Bootsplatz (CHF)", value=1500.0)
     k_w = st.number_input("Winterlager (CHF)", value=2200.0)
@@ -139,4 +145,5 @@ elif menu == "💰 Finanzen":
     st.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {fix_sum + serv_sum + sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Stealth Build v23.2")
+st.write("---")
+st.caption("Truelove Bridge Build v23.3")
