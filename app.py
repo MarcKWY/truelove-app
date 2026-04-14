@@ -64,7 +64,7 @@ st.markdown("""
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
     
-    /* TABELLEN-FARBEN: Dunkelblaues Design mit weisser Schrift */
+    /* TABELLEN: Dunkelblau mit weisser Schrift */
     [data-testid="stTable"] {
         background-color: #0A1E3C !important;
         border: 1px solid #D4AF37 !important;
@@ -73,7 +73,6 @@ st.markdown("""
     [data-testid="stTable"] td, [data-testid="stTable"] th {
         color: white !important;
         text-align: left !important;
-        border-bottom: 1px solid rgba(212, 175, 55, 0.2) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -97,7 +96,7 @@ if menu == "⛽ Tanken":
     st.subheader("⛽ Tank-Management")
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
     
-    t_lit = st.number_input("Liter", min_value=0.0, step=0.1, format="%.2f")
+    t_lit = st.number_input("Liter", min_value=0.0, step=0.01, format="%.2f")
     t_pr = st.number_input("CHF / L", value=2.15, format="%.2f")
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
@@ -106,9 +105,9 @@ if menu == "⛽ Tanken":
         if t_lit > 0:
             st.session_state.tank_daten.append({
                 "Datum": datetime.now().strftime("%d.%m.%Y"), 
-                "Liter": round(t_lit, 2), 
-                "CHF/L": round(t_pr, 2),
-                "Total CHF": round(t_lit*t_pr, 2), 
+                "Liter": f"{t_lit:.2f}", 
+                "CHF/L": f"{t_pr:.2f}",
+                "Total CHF": f"{(t_lit*t_pr):.2f}", 
                 "Wer": t_wer
             })
             st.rerun()
@@ -118,8 +117,7 @@ if menu == "⛽ Tanken":
             st.rerun()
     
     if st.session_state.tank_daten:
-        df_tank = pd.DataFrame(st.session_state.tank_daten)
-        st.table(df_tank) # Saubere Liste untereinander
+        st.table(pd.DataFrame(st.session_state.tank_daten))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "⚙️ Motor & Service":
@@ -137,7 +135,7 @@ elif menu == "⚙️ Motor & Service":
     
     st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
-    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.05, format="%.2f")
+    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
     
     c3, c4 = st.columns(2)
     if c3.button("Eintrag speichern"):
@@ -145,7 +143,7 @@ elif menu == "⚙️ Motor & Service":
             st.session_state.service_historie.append({
                 "Datum": datetime.now().strftime("%d.%m.%Y"), 
                 "Arbeit": s_arbeit, 
-                "Kosten CHF": round(s_preis, 2)
+                "CHF": f"{s_preis:.2f}"
             })
             st.rerun()
     if c4.button("Löschen 🗑️"):
@@ -154,14 +152,29 @@ elif menu == "⚙️ Motor & Service":
             st.rerun()
     
     if st.session_state.service_historie:
-        df_service = pd.DataFrame(st.session_state.service_historie)
-        st.table(df_service) # Saubere Liste untereinander
+        st.table(pd.DataFrame(st.session_state.service_historie))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Fixkosten & Übersicht")
-    # ... Rest des Finanzcodes bleibt identisch ...
+    
+    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.00, format="%.2f")
+    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.00, format="%.2f")
+    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.00, format="%.2f")
+    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.00, format="%.2f")
+    
+    sprit_sum = sum(float(i['Total CHF']) for i in st.session_state.tank_daten)
+    serv_sum = sum(float(i['CHF']) for i in st.session_state.service_historie)
+    fix_sum = f_winter + f_platz + f_steuer + f_vers
+    
+    st.write("---")
+    st.markdown(f"### ⚙️ Kosten Service: **CHF {serv_sum:,.2f}**")
+    st.write("---")
+    
+    col1, col2 = st.columns(2)
+    col1.metric("TOTAL OHNE BENZIN", f"CHF {(fix_sum + serv_sum):,.2f}")
+    col2.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
+    
+    st.info(f"⛽ Davon reine Benzinkosten: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
-
-st.caption("Truelove Bridge v25.2 - Dark List UI")
