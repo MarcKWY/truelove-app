@@ -11,10 +11,10 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* TITEL: GOLD UND ETWAS KLEINER (70px) */
+    /* TITEL: NOCH ETWAS KLEINER (55px) UND GOLD */
     .truelove-title {
         font-family: 'Georgia', serif !important;
-        font-size: 70px !important;
+        font-size: 55px !important;
         font-weight: bold !important;
         color: #D4AF37 !important;
         text-align: center !important;
@@ -26,28 +26,36 @@ st.markdown("""
     
     .crownline-subtitle {
         font-family: 'Helvetica Neue', sans-serif;
-        font-size: 20px;
+        font-size: 18px;
         text-align: center;
-        margin-top: -10px;
+        margin-top: -5px;
         color: #FFFFFF;
+        opacity: 0.8;
     }
 
-    /* UPLOAD FENSTER: FARBE EXTREM ERZWUNGEN (GOLD) */
-    div[data-testid="stFileUploadDropzone"] {
-        background-color: #D4AF37 !important;
-        border: 2px dashed #FFFFFF !important;
-        border-radius: 15px !important;
+    /* UPLOAD FENSTER FIX: GOLDENER RAHMEN & KONTRAST-HINTERGRUND */
+    [data-testid="stFileUploadDropzone"] {
+        background-color: #1a1a1a !important; /* Dunkler Hintergrund */
+        border: 2px solid #D4AF37 !important; /* Goldener Rahmen */
+        border-radius: 10px !important;
+        min-height: 100px !important;
     }
-    /* Alle Texte im Upload-Bereich auf SCHWARZ für maximalen Kontrast */
-    div[data-testid="stFileUploadDropzone"] * {
-        color: #000000 !important;
+    
+    /* Erzwingt weisse Schrift für "Drag and drop file here" */
+    [data-testid="stFileUploadDropzone"] div div span {
+        color: #D4AF37 !important;
         font-weight: bold !important;
+    }
+    
+    /* Erzwingt weisse Schrift für das Limit (200MB) */
+    [data-testid="stFileUploadDropzone"] div div small {
+        color: #FFFFFF !important;
     }
 
     /* ALLGEMEINES STYLING */
     label, .stRadio label, p, span {
         color: #FFFFFF !important;
-        font-size: 22px !important;
+        font-size: 20px !important;
         font-weight: 500 !important;
     }
     div[data-testid="stRadio"] label { font-size: 45px !important; }
@@ -80,7 +88,6 @@ st.markdown("""
         padding: 20px;
         border-radius: 12px;
         border-left: 6px solid #D4AF37;
-        line-height: 1.6;
     }
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
