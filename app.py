@@ -159,13 +159,13 @@ elif menu == "⚙️ Motor & Service":
     st.markdown(f"<div class='card'><h3>⚙️ Service Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
     if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
     
-    # MOTORDATEN FEST HINTERLEGT
+    # SPEZIFISCHE MOTORDATEN FÜR MERCRUISER 496 MAG HO
     st.markdown(f"""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
-    <b>Leistung:</b> 431 PS (317 kW) @ 4400-4800 RPM<br>
-    <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
-    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
+    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
+    <b>Hubraum:</b> 8.1 Liter (496 cid) V8 Big Block<br>
     <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
+    <b>Einspritzsystem:</b> Multi-Port EFI (PCM 555)<br>
     <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
@@ -211,4 +211,4 @@ elif menu == "💰 Finanzen":
     st.info(f"⛽ Reine Benzinkosten {auswahl_jahr}: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption(f"Truelove Bridge v25.8 - Persistente Saison {auswahl_jahr}")
+st.caption(f"Truelove Bridge v25.9 - Motor Specs Update")
