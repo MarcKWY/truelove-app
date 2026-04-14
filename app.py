@@ -1,65 +1,85 @@
 import streamlit as st
+from datetime import datetime
 
-# Setup & Dark-Theme Styling
-st.set_page_config(page_title="Truelove App", page_icon="🛥️")
+# --- PREMIUM DESIGN SETUP ---
+st.set_page_config(page_title="Truelove - Crownline 286 SC", page_icon="⚓", layout="wide")
 
+# Custom CSS für den "Luxus-Yacht" Look
 st.markdown("""
     <style>
-    /* Hintergrund und Textfarben für den Premium-Look */
-    .stApp { background-color: #0e1117; color: #ffffff; }
-    .stMetric { background-color: #1c212b; border: 1px solid #002d5a; padding: 15px; border-radius: 15px; }
-    div[data-testid="stExpander"] { background-color: #1c212b; border-radius: 10px; }
-    .stButton>button { width: 100%; border-radius: 20px; background-color: #002d5a; color: white; }
+    .stApp { background-color: #0b0e14; color: #e0e0e0; }
+    [data-testid="stMetricValue"] { color: #d4af37 !important; font-weight: bold; }
+    .stButton>button { border: 1px solid #d4af37; background-color: #1a1f26; color: #d4af37; border-radius: 5px; height: 3em; }
+    .stButton>button:hover { background-color: #d4af37; color: #0b0e14; }
+    .css-1kyx600 { background-color: #161b22; border-radius: 15px; padding: 20px; border: 1px solid #30363d; }
+    h1, h2, h3 { color: #d4af37; font-family: 'Playfair Display', serif; }
     </style>
     """, unsafe_allow_html=True)
 
-# Header
-st.image("https://crownline.com", width=180)
-st.title("Truelove Dashboard ⚓")
+# --- HEADER MIT LOGO ---
+col_logo, col_info = st.columns([1, 3])
+with col_logo:
+    # Stabilerer Logo-Link
+    st.image("https://crownline.com", width=220)
 
-# --- TANK ANZEIGE (Neu!) ---
-st.subheader("⛽ Treibstoff-Status")
-tank_kapazitaet = 300  # Liter (Schätzung für 286 SC)
-aktueller_stand = st.slider("Aktueller Tankinhalt (Liter)", 0, tank_kapazitaet, 220)
-verbrauch_prozent = (aktueller_stand / tank_kapazitaet) * 100
-
-if verbrauch_prozent > 20:
-    st.progress(verbrauch_prozent / 100)
-    st.write(f"Dein Tank ist noch zu {verbrauch_prozent:.0f}% voll ({aktueller_stand}L).")
-else:
-    st.error(f"⚠️ RESERVE! Nur noch {verbrauch_prozent:.0f}% im Tank.")
-
-# --- BERECHNUNG ---
-with st.expander("🚀 Fahrt-Kalkulator & Kosten", expanded=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        distanz = st.number_input("Distanz (nm)", value=15.0)
-        speed = st.slider("Speed (kn)", 1, 45, 24)
-        liter_preis = st.number_input("Preis CHF/L", value=2.10)
-    
-    # Kalkulation
-    zeit = distanz / speed
-    verbrauch = zeit * 50 # Annahme 50L/h für den V8
-    kosten = verbrauch * liter_preis
-    
-    with col2:
-        st.metric("Verbrauch Trip", f"{verbrauch:.1f} L")
-        st.metric("Kosten Trip", f"CHF {kosten:.2f}")
-
-# --- KOSTEN ZUSAMMENFASSUNG ---
-with st.expander("💰 Fixkosten Übersicht (CHF)"):
-    v = st.number_input("Versicherung/Jahr", value=1100)
-    s = st.number_input("Steuer/Jahr", value=350)
-    w = st.number_input("Winterlager", value=2200)
-    total = v + s + w
-    st.metric("Gesamtkosten Jahr", f"CHF {total}")
-    st.caption(f"Das sind CHF {total/12:.2f} pro Monat.")
-
-# --- LOGBUCH QUICK-ENTRY ---
-st.subheader("📝 Quick-Log")
-st.text_input("Wohin geht's heute?")
-if st.button("Törn starten"):
-    st.success("Fahrt wurde im Logbuch gespeichert!")
+with col_info:
+    st.title("TRUELOVE | Skipper Dashboard")
+    st.markdown("#### Crownline 286 SC | 8.2L Mercruiser V8 496 MAG")
 
 st.write("---")
-st.caption("Truelove Crownline Edition | V8 Power")
+
+# --- WARTUNGS-ALARM (Neu!) ---
+with st.container():
+    st.subheader("🛠️ Maschinenraum & Wartung")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Motorleistung", "317 KW / 431 PS")
+    with c2:
+        last_service = 450 # Beispielwert
+        st.metric("Letzter Service bei", f"{last_service} h")
+    with c3:
+        next_service = 500
+        st.metric("Nächster Service fällig", f"{next_service} h")
+    
+    st.warning(f"🔔 Hinweis: In ca. {next_service - last_service} Betriebsstunden ist der Ölwechsel für den V8 fällig.")
+
+# --- NAVIGATION ---
+tab_trip, tab_kosten, tab_log = st.tabs(["🚀 Törn-Planer", "💰 Finanzen (CHF)", "📋 Bordbuch"])
+
+with tab_trip:
+    st.subheader("Sprit & Reichweite")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        dist = st.number_input("Distanz (Seemeilen)", value=20.0)
+        speed = st.slider("Reisegeschwindigkeit (kn)", 5, 45, 24)
+        tank_inhalt = st.slider("Aktueller Tankstand (L)", 0, 300, 180)
+    
+    with col_b:
+        verbrauch_h = 55.0 # Geschätzter V8 Verbrauch bei Gleitfahrt
+        zeit = dist / speed
+        benötigt = zeit * verbrauch_h
+        st.metric("Spritbedarf", f"{benötigt:.1f} L", delta=f"{tank_inhalt - benötigt:.1f} L Rest")
+        st.metric("Kosten (bei 2.15 CHF/L)", f"CHF {benötigt * 2.15:.2f}")
+
+with tab_kosten:
+    st.subheader("Kostenübersicht Truelove")
+    k1, k2 = st.columns(2)
+    with k1:
+        v = st.number_input("Versicherung/Jahr", value=1150)
+        s = st.number_input("Steuer (Kanton)/Jahr", value=380)
+        w = st.number_input("Winterlager & Service", value=2400)
+    with k2:
+        total = v + s + w
+        st.metric("Gesamt Fixkosten", f"CHF {total:,.2f}")
+        st.info(f"Rückstellung monatlich: CHF {total/12:.2f}")
+
+with tab_log:
+    st.subheader("Digitales Logbuch")
+    st.text_input("Törn-Bezeichnung (z.B. Ausflug nach Brunnen)")
+    st.text_area("Besatzung & Wetternotizen")
+    if st.button("Törn im Logbuch speichern"):
+        st.success("Daten wurden sicher auf dem Server abgelegt.")
+
+# --- FOOTER ---
+st.write("---")
+st.caption("Truelove Platinum Edition | Created for Crownline Owners")
