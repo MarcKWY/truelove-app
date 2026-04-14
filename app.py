@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: OVERLAY BRIDGE DESIGN ---
+# --- SETUP: FULL WIDTH BRIDGE ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
@@ -11,9 +11,7 @@ st.markdown("""
     /* UI CLEANUP: Banner und Balken weg */
     #MainMenu, header, footer { visibility: hidden; }
     [data-testid="stDecoration"] { display: none; }
-    hr { display: none !important; } /* Entfernt Trennlinien */
-    div[data-testid="stHorizontalBlock"] { border: none !important; }
-
+    
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
     .truelove-title {
@@ -36,25 +34,41 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* MENÜ-BALKEN: Breite 100% wie das Bild, Goldener Rahmen */
-    div[data-testid="stRadio"] > div {
-        background-color: rgba(5, 15, 30, 0.85);
-        padding: 15px 5px;
-        border-radius: 15px;
-        border: 2px solid #D4AF37;
-        backdrop-filter: blur(10px);
-        margin-top: 10px;
-        display: flex;
-        justify-content: space-around;
+    /* NAVIGATION: EXAKT BÜNDIG ZUM BILD (WIDTH 100%) */
+    div[data-testid="stRadio"] {
         width: 100% !important;
-        border-bottom: 2px solid #D4AF37 !important; /* Verhindert den grünen Balken-Effekt */
+        margin: 0px !important;
+        padding: 0px !important;
     }
 
-    /* ICONS VERKLEINERT & SCHRIFT WEISS */
+    div[data-testid="stRadio"] > div {
+        background-color: rgba(5, 15, 30, 0.85);
+        padding: 15px 5px !important;
+        border-radius: 15px !important;
+        border: 2px solid #D4AF37 !important;
+        backdrop-filter: blur(10px);
+        margin-top: 10px !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        width: 100% !important; /* Erzwingt die Breite des Bildes */
+        
+        /* FIX: ENTFERNT DEN GRÜN MARKIERTEN UNTEREN BALKEN */
+        border-bottom: 2px solid #D4AF37 !important;
+        box-shadow: none !important;
+    }
+    
+    /* Entfernt den grauen Balken-Effekt von Streamlit */
+    div[data-testid="stRadio"] div[role="radiogroup"] {
+        border: none !important;
+        gap: 10px !important;
+    }
+
+    /* ICONS & SCHRIFT */
     div[data-testid="stRadio"] label {
         color: #FFFFFF !important;
-        font-size: 24px !important; /* Angepasste Größe */
+        font-size: 24px !important;
         font-weight: 500;
+        border: none !important;
     }
 
     /* EINGABEFELDER SCHWARZ AUF WEISS */
@@ -95,7 +109,7 @@ if os.path.exists("boot_gross.jpg"):
 # NAVIGATION
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
-                key="nav_radio_final_fix",
+                key="nav_radio_vFINAL",
                 horizontal=True,
                 label_visibility="collapsed")
 
@@ -157,4 +171,4 @@ elif menu == "💰 Finanzen":
     st.metric("Servicekosten", f"CHF {serv_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.8")
+st.caption("Truelove Bridge v24.9 - Fixed Width")
