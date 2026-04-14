@@ -30,10 +30,10 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* KORREKTUR: Rahmenbreite an Bild angepasst (100%), Schrift Weiss, Icons gross */
+    /* Rahmenbreite 100% und Zentrierung */
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85);
-        padding: 15px 10px;
+        padding: 20px 10px;
         border-radius: 15px;
         border: 2px solid #D4AF37;
         backdrop-filter: blur(10px);
@@ -41,14 +41,22 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         display: flex;
         justify-content: space-around;
-        width: 100%; /* Breite an das Bild angepasst */
+        width: 100%;
     }
 
-    /* Schrift in WEISS und Emojis/Icons VERGRÖSSERT */
+    /* DOMINANTE ICONS UND SCHRIFT */
     div[data-testid="stRadio"] label {
         color: #FFFFFF !important;
-        font-weight: 500;
-        font-size: 22px !important; /* Icons und Text grösser */
+        font-weight: bold !important;
+        font-size: 32px !important; /* Massiv vergrössert für Dominanz */
+        flex-direction: column; /* Icon über dem Text (optional, falls gewünscht) */
+        gap: 10px;
+    }
+    
+    /* Vergrössert speziell die Emojis, falls der Browser sie separat anspricht */
+    div[data-testid="stRadio"] label p {
+        font-size: 32px !important;
+        line-height: 1.2;
     }
 
     .card {
@@ -96,7 +104,7 @@ if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⛽ Tank-Management")
     if os.path.exists("tanken.jpg"): 
-        st.image("tanken.jpg", width=300)
+        st.image("tanken.jpg", width=250)
     
     t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
     t_pr = st.number_input("CHF / L", value=2.15)
@@ -121,7 +129,7 @@ elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⚙️ Vollständige Motordaten")
     if os.path.exists("motor.jpg"): 
-        st.image("motor.jpg", width=300)
+        st.image("motor.jpg", width=250)
 
     st.markdown("""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
@@ -143,7 +151,7 @@ elif menu == "⚙️ Motor & Service":
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Finanzen")
-    # Logik hier...
+    # Finanz-Inhalt hier...
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.1")
+st.caption("Truelove Bridge v24.2")
