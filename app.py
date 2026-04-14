@@ -10,7 +10,7 @@ st.markdown("""
     <style>
     /* GLOBALE FARBEN & SCHRIFTEN */
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    * { color: #FFFFFF; } /* Alles weiss */
+    * { color: #FFFFFF; } 
 
     /* SCHWARZE SCHRIFT IN EINGABEFELDERN & TABELLEN */
     input, [data-testid="stTable"] td, [data-testid="stTable"] th, .stNumberInput div div input { 
@@ -20,6 +20,7 @@ st.markdown("""
     #MainMenu, header, footer { visibility: hidden; }
     [data-testid="stDecoration"] { display: none; }
 
+    /* Titel-Styling */
     .truelove-title {
         font-family: 'Georgia', serif;
         font-size: 58px;
@@ -39,27 +40,34 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* MENÜ-BAND: BREITE AN BILD ANGEPASST (100%), KEIN UNTERER BALKEN */
+    /* MENÜ-BALKEN: EXAKT SO BREIT WIE DAS BILD */
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85) !important;
-        padding: 20px 10px !important;
+        padding: 20px 0px !important;
         border-radius: 15px !important;
         border: 2px solid #D4AF37 !important;
         backdrop-filter: blur(10px);
         margin-top: 10px !important;
         display: flex;
         justify-content: space-around;
+        
+        /* Breite auf 100% des Containers (wie das Bild) */
         width: 100% !important;
-        border-bottom: 2px solid #D4AF37 !important; /* Verhindert das "Abbrechen" des Rahmens */
+        box-sizing: border-box;
     }
     
-    div[data-testid="stRadio"] { border: none !important; }
+    /* Entfernt zusätzliche Abstände von Streamlit um das Radio-Widget */
+    div[data-testid="stRadio"] { 
+        width: 100% !important; 
+        border: none !important; 
+    }
 
     /* DOMINANTE ICONS & WEISSE SCHRIFT */
     div[data-testid="stRadio"] label {
         font-weight: bold !important;
-        font-size: 35px !important; /* NOCH GRÖSSER */
+        font-size: 35px !important; 
         color: #FFFFFF !important;
+        cursor: pointer;
     }
 
     .card {
@@ -90,13 +98,13 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD
+# HAUPTBILD (Breite ist container_width)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION
+# NAVIGATION (Balken ist jetzt 100% breit)
 menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
-                key="nav_radio_final_v2", horizontal=True, label_visibility="collapsed")
+                key="nav_radio_fixed_width", horizontal=True, label_visibility="collapsed")
 
 # --- BEREICHE ---
 if menu == "⛽ Tanken":
@@ -153,4 +161,4 @@ elif menu == "💰 Finanzen":
     st.metric("Servicekosten", f"CHF {serv_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.5 - Full Restore")
+st.caption("Truelove Bridge v24.6 - Full Width UI")
