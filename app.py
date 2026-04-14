@@ -3,116 +3,157 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: LUXURY YACHT DESIGN ---
+# --- SETUP: OVERLAY BRIDGE DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
-    @import url('https://googleapis.com');
-
-    .stApp { 
-        background: radial-gradient(circle at top, #0d1b2a 0%, #050a14 100%); 
-        color: #e0e0e0;
-        font-family: 'Inter', sans-serif;
-    }
+    .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* Titel-Styling */
     .truelove-title {
-        font-family: 'Inter', sans-serif;
-        font-size: clamp(40px, 8vw, 70px);
-        font-weight: 100;
+        font-family: 'Georgia', serif;
+        font-size: 58px;
+        font-weight: bold;
         color: #D4AF37;
         text-align: center;
-        letter-spacing: 12px;
+        letter-spacing: 5px;
         margin-bottom: 0px;
-        background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
     }
     
     .crownline-subtitle {
-        font-size: 14px;
-        color: rgba(255,255,255,0.6);
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 20px;
+        color: #FFFFFF;
         text-align: center;
         margin-top: -10px;
-        letter-spacing: 6px;
-        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-weight: 200;
     }
 
-    /* Schwebendes Glas-Menü */
+    /* Das Menü, das DIREKT ÜBER dem Bild schwebt */
     .nav-overlay-photo {
-        background: rgba(15, 23, 42, 0.7); 
-        padding: 10px 20px;
-        border-radius: 50px; /* Rundere Ecken für Modernität */
-        border: 1px solid rgba(212, 175, 55, 0.4);
-        backdrop-filter: blur(15px);
+        background-color: rgba(5, 15, 30, 0.85); /* Halbdurchsichtig */
+        padding: 15px;
+        border-radius: 15px;
+        border: 2px solid #D4AF37;
+        backdrop-filter: blur(10px);
+        
+        /* Dieser Teil schiebt das Menü ÜBER das Bild */
         position: relative;
-        margin-top: -60px; /* Etwas weniger aggressiv */
+        margin-top: -110px; 
         z-index: 999;
-        width: fit-content;
+        
+        width: 90%;
         margin-left: auto;
         margin-right: auto;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
-    /* Content Karten */
     .card {
-        background: rgba(255, 255, 255, 0.03);
-        padding: 30px;
-        border-radius: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        margin-top: 50px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 25px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 40px; /* Platz zum schwebenden Menü */
     }
     
     .spec-card { 
-        background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 100%); 
+        background-color: rgba(212, 175, 55, 0.1); 
         padding: 20px; 
-        border-radius: 15px; 
-        border-left: 4px solid #D4AF37;
+        border-radius: 12px; 
+        border-left: 6px solid #D4AF37;
     }
     
-    /* Goldene Akzente für Tabellen & Eingaben */
-    h2, h3, b { color: #f1d592 !important; font-weight: 300; }
+    h2, h3, b { color: #D4AF37 !important; }
+    .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
     
-    /* Streamlit UI Elemente anpassen */
-    .stButton>button {
-        border-radius: 30px !important;
-        border: 1px solid #D4AF37 !important;
-        background-color: transparent !important;
-        color: #D4AF37 !important;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #D4AF37 !important;
-        color: #050a14 !important;
-        box-shadow: 0 0 15px rgba(212,175,55,0.4);
-    }
-
-    /* Verstecke Radio-Label und style Buttons */
-    div[data-testid="stRadio"] label { font-size: 12px; color: #D4AF37; }
-    
+    /* Radio Buttons Styling */
+    div[data-testid="stHorizontalBlock"] { justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
+# Daten-Speicher
+if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
+if 'service_historie' not in st.session_state: st.session_state.service_historie = []
+
 # --- HEADER ---
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
-st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC • EXCLUSIVE EDITION</p>", unsafe_allow_html=True)
+st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD 
+# HAUPTBILD (DIESES BILD WIRD ÜBERLAGERT)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
-else:
-    st.info("Füge 'boot_gross.jpg' hinzu, um das volle Design zu sehen.")
 
-# NAVIGATION
+# DIE STEUERUNG - JETZT DIREKT AUF DEM FOTO
 st.markdown("<div class='nav-overlay-photo'>", unsafe_allow_html=True)
 menu = st.radio("BRIDGE CONTROL", 
-                ["⛽ Tanken", "⚙️ Motor", "💰 Finanzen"], 
+                ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
                 key="nav_photo_overlay",
                 horizontal=True,
                 label_visibility="collapsed")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Den Rest deines Codes (Logik) hier weiterführen...
-# [Hier folgt dein bestehender Code für Tanken, Motor, Finanzen]
+st.write("##") # Kleiner Puffer
+
+# --- BEREICHE ---
+
+if menu == "⛽ Tanken":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("⛽ Tank-Management")
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=400)
+    
+    t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
+    t_pr = st.number_input("CHF / L", value=2.15)
+    t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
+    
+    c1, c2 = st.columns(2)
+    if c1.button("Speichern ✅", use_container_width=True):
+        if t_lit > 0:
+            st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
+            st.rerun()
+    if c2.button("Letzten löschen 🗑️", use_container_width=True):
+        if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
+
+    if st.session_state.tank_daten:
+        df_t = pd.DataFrame(st.session_state.tank_daten)
+        ausg = df_t.groupby("Wer")["Total"].sum()
+        st.info(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
+        st.table(df_t)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+elif menu == "⚙️ Motor & Service":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("⚙️ Motor & Service")
+    st.markdown("""<div class='spec-card'><h3>Mercruiser 496 MAG HO</h3>
+    • <b>Leistung:</b> 317 kW / 431 PS HO<br>• <b>Hubraum:</b> 8.2L V8 Big Block<br>
+    • <b>Zündfolge:</b> 1-8-4-3-6-5-7-2</div>""", unsafe_allow_html=True)
+    
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
+    
+    st.write("### 🔧 Service Log")
+    s_arbeit = st.text_input("Was wurde gemacht?")
+    s_preis = st.number_input("Kosten CHF", min_value=0.0)
+    if st.button("Eintrag speichern"):
+        st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+elif menu == "💰 Finanzen":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("💰 Finanzen")
+    k_v = st.number_input("Versicherung (CHF)", value=1150.0)
+    k_p = st.number_input("Bootsplatz (CHF)", value=1500.0)
+    k_w = st.number_input("Winterlager (CHF)", value=2200.0)
+    k_s = st.number_input("Steuern (CHF)", value=350.0)
+    
+    fix_sum = k_v + k_p + k_w + k_s
+    sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
+    serv_sum = sum(i['CHF'] for i in st.session_state.service_historie)
+    
+    st.write("---")
+    st.metric("Total Kosten OHNE Benzin", f"CHF {fix_sum + serv_sum:,.2f}")
+    st.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {fix_sum + serv_sum + sprit_sum:,.2f}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.write("---")
+st.caption("Truelove Bridge Overlay v23.6")
