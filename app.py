@@ -11,16 +11,16 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* TITEL: MASSIV GROSS UND GOLD ERZWUNGEN */
+    /* TITEL: GOLD UND ETWAS KLEINER (70px) */
     .truelove-title {
         font-family: 'Georgia', serif !important;
-        font-size: 90px !important;
+        font-size: 70px !important;
         font-weight: bold !important;
         color: #D4AF37 !important;
         text-align: center !important;
         margin-bottom: 0px !important;
         letter-spacing: 5px !important;
-        text-shadow: 2px 2px 15px rgba(212, 175, 55, 0.4) !important;
+        text-shadow: 2px 2px 10px rgba(0,0,0,0.5) !important;
         display: block !important;
     }
     
@@ -32,20 +32,19 @@ st.markdown("""
         color: #FFFFFF;
     }
 
-    /* UPLOAD FENSTER: FARBE ERZWINGEN (HELLGOLD) */
-    [data-testid="stFileUploadDropzone"] {
+    /* UPLOAD FENSTER: FARBE EXTREM ERZWUNGEN (GOLD) */
+    div[data-testid="stFileUploadDropzone"] {
         background-color: #D4AF37 !important;
         border: 2px dashed #FFFFFF !important;
-        border-radius: 10px !important;
+        border-radius: 15px !important;
     }
-    /* Text im Upload-Feld schwarz für Lesbarkeit */
-    [data-testid="stFileUploadDropzone"] div div span,
-    [data-testid="stFileUploadDropzone"] div div small {
+    /* Alle Texte im Upload-Bereich auf SCHWARZ für maximalen Kontrast */
+    div[data-testid="stFileUploadDropzone"] * {
         color: #000000 !important;
         font-weight: bold !important;
     }
 
-    /* TEXT-STYLING ALLGEMEIN */
+    /* ALLGEMEINES STYLING */
     label, .stRadio label, p, span {
         color: #FFFFFF !important;
         font-size: 22px !important;
@@ -149,7 +148,6 @@ elif menu == "⚙️ Motor & Service":
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 431 PS (317 kW) @ 4400-4800 RPM<br>
     <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
-    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
     <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
     <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
