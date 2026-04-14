@@ -1,99 +1,116 @@
 import streamlit as st
 import os
+import pandas as pd
+from datetime import datetime
 
 # --- APP SETUP ---
 st.set_page_config(page_title="Truelove - V8 HO Edition", layout="wide")
 
-# Styling: High-End Dark Mode
+# Styling
 st.markdown("""
     <style>
     .stApp { background-color: #050a14; color: white; }
     .stMetric { background: rgba(0, 212, 255, 0.1); border-radius: 15px; border: 1px solid #00d4ff; }
-    .spec-box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border-left: 5px solid #d4af37; }
+    .stDataFrame { background-color: white; border-radius: 10px; }
     h1, h2 { color: #00d4ff; }
     b { color: #d4af37; }
     </style>
     """, unsafe_allow_html=True)
+
+# --- DATEN-SIMULATION (Tankbuch) ---
+# In einer echten App würden wir hier eine CSV-Datei laden
+if 'tank_daten' not in st.session_state:
+    st.session_state.tank_daten = []
 
 # --- HEADER ---
 col_logo, col_title = st.columns([1, 4])
 with col_logo:
     for ext in ["png", "jpg", "jpeg", "PNG"]:
         if os.path.exists(f"logo.{ext}"):
-            st.image(f"logo.{ext}", width=120)
+            st.image(f"logo.{ext}", width=100)
             break
 with col_title:
-    st.title("TRUELOVE | Crownline 286 SC")
-    st.write("Special Edition: Mercruiser 8.2L V8 High Output")
+    st.title("TRUELOVE | Skipper Dashboard")
+    st.write(f"Saison {datetime.now().year} | Mercruiser 496 MAG HO")
 
 # --- REITER ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["⛽ Tanken", "🔧 Wartung", "⚙️ Motor-Specs", "💰 Kosten", "📖 Fahrtenbuch"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["⛽ Tanken & Log", "🔧 Wartung", "⚙️ Motor-Specs", "💰 Fixkosten", "📖 Fahrtenbuch"])
 
 with tab1:
-    st.header("Reise-Kalkulation")
-    col1, col2 = st.columns(2)
-    with col1:
-        dist = st.number_input("Distanz (nm)", value=25.0)
-        # Der HO verbraucht bei ca. 3500 RPM (Cruising) ca. 60-70 L/h
-        liter = (dist / 22) * 65 
-        st.metric("Spritbedarf", f"{liter:.1f} L")
-        st.metric("Kosten (CHF)", f"{liter * 2.15:.2f}")
-    with col2:
+    st.header("⛽ Tankbuch & Kalkulation")
+    
+    col_input, col_img = st.columns([2, 1])
+    
+    with col_input:
+        with st.expander("➕ Neuen Tankstopp eintragen", expanded=True):
+            t_datum = st.date_input("Datum", datetime.now())
+            t_liter = st.number_input("Liter (L)", min_value=0.0, step=10.0)
+            t_preis = st.number_input("Preis pro Liter (CHF)", min_value=0.0, value=2.15)
+            t_wer = st.selectbox("Bezahlt durch", ["Marc", "Fabienne"])
+            
+            if st.button("Eintrag speichern"):
+                neuer_eintrag = {
+                    "Datum": t_datum.strftime("%d.%m.%Y"),
+                    "Liter": t_liter,
+                    "CHF/L": t_preis,
+                    "Total CHF": round(t_liter * t_preis, 2),
+                    "Zahler": t_wer
+                }
+                st.session_state.tank_daten.append(neuer_eintrag)
+                st.success("Tanken erfolgreich registriert!")
+
+    with col_img:
         if os.path.exists("tanken.jpg"):
-            st.image("tanken.jpg", caption="Refueling Truelove", use_container_width=True)
+            st.image("tanken.jpg", use_container_width=True)
+
+    # Auswertung
+    if st.session_state.tank_daten:
+        df = pd.DataFrame(st.session_state.tank_daten)
+        st.write("### Aktuelle Saisonübersicht")
+        st.dataframe(df, use_container_width=True)
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Total Liter", f"{df['Liter'].sum():.1f} L")
+        with c2:
+            st.metric("Total Kosten", f"CHF {df['Total CHF'].sum():,.2f}")
+        with c3:
+            st.metric("Einträge", len(df))
+            
+        # Wer hat wie viel bezahlt?
+        st.write("**Wer hat wie viel bezahlt?**")
+        ausgaben = df.groupby("Zahler")["Total CHF"].sum()
+        st.write(ausgaben)
+        
+        if st.button("🚨 Saison abschliessen & Daten löschen"):
+            st.session_state.tank_daten = []
+            st.rerun()
+    else:
+        st.info("Noch keine Tankeinträge für diese Saison vorhanden.")
 
 with tab2:
-    st.header("Service-Intervall")
+    st.header("Service & Wartung")
     if os.path.exists("wartung.jpg"):
         st.image("wartung.jpg", use_container_width=True)
-    st.write("---")
-    st.warning("Nächster Service: Getriebeöl & Impeller-Check empfohlen.")
 
 with tab3:
-    st.header("⚙️ Mercruiser 496 MAG HO (High Output)")
-    col_m1, col_m2 = st.columns(2)
-    
-    with col_m1:
-        if os.path.exists("motor.jpg"):
-            st.image("motor.jpg", caption="8.2L V8 Big Block", use_container_width=True)
-            
-    with col_m2:
-        st.markdown("""
-        <div class="spec-box">
-        <h3>Technische Daten:</h3>
-        <ul>
-            <li><b>Leistung:</b> 317 kW / 431 PS (High Output)</li>
-            <li><b>Hubraum:</b> 8.128 ccm (496 cubic inches)</li>
-            <li><b>Zylinder:</b> V8 Big Block</li>
-            <li><b>Max. Drehzahl (WOT):</b> 4600 - 5000 RPM</li>
-            <li><b>Einspritzung:</b> MPI (Multi-Point Injection)</li>
-            <li><b>Kühlsystem:</b> Zweikreiskühlung (Closed Cooling)</li>
-            <li><b>SmartCraft:</b> Full Digital Monitoring</li>
-            <li><b>Bohrung x Hub:</b> 108 mm x 111 mm</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
+    st.header("⚙️ 496 MAG HO Specs")
+    if os.path.exists("motor.jpg"):
+        st.image("motor.jpg", width=400)
+    st.markdown("- **Leistung:** 317 kW / 431 PS\n- **Hubraum:** 8.2L V8 Big Block\n- **Zweikreiskühlung**")
 
 with tab4:
-    st.header("Finanzielles")
-    col_k1, col_k2 = st.columns(2)
-    with col_k1:
-        v = st.number_input("Versicherung (CHF)", value=1150)
-        w = st.number_input("Winterlager & Dock (CHF)", value=2400)
-        total = v + w + 350
-        st.metric("Gesamt Fixkosten", f"CHF {total:,.2f}")
-    with col_k2:
-        if os.path.exists("kosten.jpg"):
-            st.image("kosten.jpg", caption="Hafen & Infrastruktur", use_container_width=True)
-        else:
-            st.info("Lade 'kosten.jpg' auf GitHub hoch (z.B. Foto vom Hafen).")
+    st.header("Fixkosten")
+    if os.path.exists("kosten.jpg"):
+        st.image("kosten.jpg", width=400)
+    v = st.number_input("Versicherung (CHF)", value=1150)
+    w = st.number_input("Winterlager (CHF)", value=2400)
+    st.metric("Total Jahr", f"CHF {v + w + 350:,.2f}")
 
 with tab5:
     st.header("Fahrtenbuch")
-    st.text_input("Start/Ziel")
-    st.number_input("Aktuelle Motorstunden", step=1, value=455)
-    if st.button("Törn speichern"):
-        st.success("Daten wurden sicher abgelegt.")
+    st.text_input("Heutiger Törn")
+    st.button("Speichern")
 
 st.write("---")
-st.caption("Truelove Fleet v9.0 | Built for V8 Performance")
+st.caption(f"Truelove Fleet v10.0 | Tank-Tracker Aktiv")
