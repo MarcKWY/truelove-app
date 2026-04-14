@@ -3,96 +3,114 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- MASTER SETUP ---
+# --- STABILER SETUP (HELL & KLAR) ---
 st.set_page_config(page_title="Truelove Dashboard", layout="wide")
 
-# Nautisches Design (Heller Hintergrund, Navy Text)
 st.markdown("""
     <style>
-    .stApp { background-color: #F0F4F8; color: #002347; }
-    div[data-testid="stMetric"] { background-color: #ffffff !important; border-left: 5px solid #d4af37 !important; border-radius: 8px; }
-    .spec-card { background-color: #002347; padding: 20px; border-radius: 12px; border: 1px solid #d4af37; color: white; }
-    .total-box { background: #002347; color: white !important; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #d4af37; }
-    h1, h2, h3 { color: #002347 !important; }
+    .stApp { background-color: #FFFFFF; color: #1A1C1E; }
+    div[data-testid="stMetric"] { background-color: #F0F7FF !important; border: 1px solid #005A9C !important; border-radius: 10px; }
+    .spec-card { background-color: #F8FAFC; padding: 20px; border-radius: 12px; border: 1px solid #E2E8F0; }
+    .total-box { background-color: #005A9C; color: white !important; padding: 15px; border-radius: 10px; text-align: center; }
+    .total-box h1, .total-box h3 { color: white !important; margin: 0; }
+    .zahler-box { background-color: #E1EFFE; padding: 10px; border-radius: 8px; border-left: 5px solid #005A9C; margin-bottom: 5px; color: #1A1C1E; }
+    h1, h2, h3 { color: #005A9C !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Daten-Speicher
+# Daten-Speicher initialisieren
 if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'service_kosten' not in st.session_state: st.session_state.service_kosten = []
 
 # --- HEADER ---
-st.title("⚓ TRUELOVE Skipper Zentrale")
-st.write("Crownline 286 SC • **V8 496 MAG HO (317 kW)**")
+col_l, col_r = st.columns()
+with col_l:
+    for ext in ["png", "jpg", "jpeg", "PNG"]:
+        if os.path.exists(f"logo.{ext}"):
+            st.image(f"logo.{ext}", width=100)
+            break
+with col_r:
+    st.title("⚓ TRUELOVE Skipper Zentrale")
+    st.write(f"Crownline 286 SC | **V8 496 MAG HO (317 kW)**")
 
 # --- REITER ---
 tab1, tab2, tab3, tab4 = st.tabs(["⛽ Tanken", "⚙️ Motor & Service", "💰 Kosten", "📖 Logbuch"])
 
+# TAB 1: TANKEN
 with tab1:
-    st.subheader("⛽ Tank-Management")
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=400)
+    if os.path.exists("tanken.jpg"): 
+        st.image("tanken.jpg", width=450)
     
     col_in, col_res = st.columns(2)
     with col_in:
         with st.container(border=True):
-            t_dat = st.date_input("Datum", datetime.now(), key="date_fix")
-            t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="lit_fix")
-            t_pr = st.number_input("CHF/L", value=2.15, key="price_fix")
-            t_w = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="who_fix")
-            if st.button("Speichern ✅", key="save_fix"):
-                if t_lit > 0:
-                    st.session_state.tank_daten.append({"Datum": t_dat.strftime("%d.%m.%Y"), "Liter": t_lit, "CHF": round(t_lit * t_pr, 2), "Wer": t_w})
-                    st.rerun()
-            if st.button("Letzten löschen 🗑️", key="del_fix"):
-                if st.session_state.tank_daten: 
-                    st.session_state.tank_daten.pop()
-                    st.rerun()
+            t_datum = st.date_input("Datum", datetime.now(), key="t_date_s")
+            t_liter = st.number_input("Liter (L)", min_value=0.0, step=10.0, key="t_lit_s")
+            t_preis = st.number_input("CHF / L", value=2.15, key="t_price_s")
+            t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="t_who_s")
+            
+            c_btn1, c_btn2 = st.columns(2)
+            with c_btn1:
+                if st.button("Speichern ✅", use_container_width=True, key="s_t_s"):
+                    if t_liter > 0:
+                        st.session_state.tank_daten.append({"Datum": t_datum.strftime("%d.%m.%Y"), "Liter": t_liter, "Total": round(t_liter * t_preis, 2), "Zahler": t_wer})
+                        st.rerun()
+            with c_btn2:
+                if st.button("Letzten löschen 🗑️", use_container_width=True, key="d_t_s"):
+                    if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
     with col_res:
         if st.session_state.tank_daten:
             df_t = pd.DataFrame(st.session_state.tank_daten)
+            st.metric("Benzin Saison (CHF)", f"{df_t['Total'].sum():,.2f}")
+            ausg = df_t.groupby("Zahler")["Total"].sum()
+            cm, cf = st.columns(2)
+            with cm: st.markdown(f"<div class='zahler-box'><b>Marc:</b><br>CHF {ausg.get('Marc', 0.0):,.2f}</div>", unsafe_allow_html=True)
+            with cf: st.markdown(f"<div class='zahler-box'><b>Fabienne:</b><br>CHF {ausg.get('Fabienne', 0.0):,.2f}</div>", unsafe_allow_html=True)
             st.table(df_t)
 
+# TAB 2: MOTOR & SERVICE
 with tab2:
-    st.subheader("⚙️ Motor & Service")
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        st.markdown("""<div class="spec-card"><b>Mercruiser 496 MAG HO</b><br>
-        • Leistung: 317 kW / 431 PS<br>• Hubraum: 8.2 Liter<br>• Zylinder: V8 Big Block<br>
-        • Kühlung: Zweikreissystem<br>• WOT: 4600-5000 RPM<br>• Öl: 8.5 L</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="spec-card"><h3>Mercruiser 496 MAG HO</h3><ul><li><b>Leistung:</b> 317 kW / 431 PS</li><li><b>Hubraum:</b> 8.2 Liter</li><li><b>Kühlung:</b> Zweikreissystem</li><li><b>Drehzahl (WOT):</b> 4600-5000 RPM</li><li><b>Zündfolge:</b> 1-8-4-3-6-5-7-2</li><li><b>Ölkapazität:</b> 8.5 L</li></ul></div>""", unsafe_allow_html=True)
         if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
     with col_m2:
         with st.container(border=True):
-            st.write("**🔧 Service-Eintrag**")
-            s_arbeit = st.text_input("Was wurde gemacht?", key="s_work_fix")
-            s_chf = st.number_input("Kosten (CHF)", min_value=0.0, key="s_price_fix")
-            if st.button("Service speichern", key="s_save_fix"):
+            st.write("### 🔧 Service eintragen")
+            s_arbeit = st.text_input("Was wurde gemacht?", key="s_w_s")
+            s_chf = st.number_input("Kosten (CHF)", min_value=0.0, key="s_c_s")
+            if st.button("Service speichern", key="s_b_s"):
                 st.session_state.service_kosten.append({"Datum": datetime.now().strftime("%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_chf})
                 st.rerun()
+        st.write("---")
+        up = st.file_uploader("Rechnung hochladen", type=['jpg', 'jpeg', 'png'], key="f_u_s")
+        if up: st.image(up, caption="Service Dokument", use_container_width=True)
         if st.session_state.service_kosten: st.table(pd.DataFrame(st.session_state.service_kosten))
 
+# TAB 3: KOSTEN
 with tab3:
-    st.subheader("💰 Kostenübersicht")
-    c_k1, c_k2 = st.columns(2)
-    with c_k1:
-        k_axa = st.number_input("AXA 🛡️", value=1150.0, key="axa_fix")
-        k_pl = st.number_input("Platz ⚓", value=1500.0, key="pl_fix")
-        k_wi = st.number_input("Winter ❄️", value=2200.0, key="wi_fix")
-        k_st = st.number_input("Steuer 📜", value=350.0, key="st_fix")
-    with c_k2:
-        sprit_sum = sum(i['CHF'] for i in st.session_state.tank_daten)
+    col_k1, col_k2 = st.columns(2)
+    with col_k1:
+        st.image("https://wikimedia.org", width=50)
+        k_axa = st.number_input("AXA Versicherung 🛡️", value=1150.0, key="k_a_s")
+        k_platz = st.number_input("Bootsplatz ⚓", value=1500.0, key="k_p_s")
+        k_winter = st.number_input("Winterlager ❄️", value=2200.0, key="k_w_s")
+        k_steuer = st.number_input("Steuern 📜", value=350.0, key="k_s_s")
+        
+    with col_k2:
+        sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
         serv_sum = sum(i['CHF'] for i in st.session_state.service_kosten)
-        fix = k_axa + k_pl + k_wi + k_st
-        st.metric("Basis Fixkosten", f"CHF {fix:,.2f}")
-        st.metric("Service Kosten", f"CHF {serv_sum:,.2f}")
-        st.metric("Benzin Saison", f"CHF {sprit_sum:,.2f}")
+        fix = k_axa + k_platz + k_winter + k_steuer
+        st.metric("Fixkosten (Basis) 🏗️", f"CHF {fix:,.2f}")
+        st.metric("Service & Benzin 🛠️", f"CHF {serv_sum + sprit_sum:,.2f}")
         st.write("---")
-        total = fix + serv_sum + sprit_sum
-        st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN</h3><h1>CHF {total:,.2f}</h1></div>", unsafe_allow_html=True)
+        st.write(f"**Total ohne Benzin:** CHF {fix + serv_sum:,.2f}")
+        st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN (Inkl. Benzin)</h3><h1>CHF {fix + serv_sum + sprit_sum:,.2f}</h1></div>", unsafe_allow_html=True)
 
+# TAB 4: LOGBUCH
 with tab4:
-    st.header("📖 Logbuch")
     if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", width=400)
-    st.text_input("Zielort 📍", key="log_fix")
+    st.text_input("Törn-Ziel 📍", key="l_d_s")
 
 st.write("---")
-st.caption("Truelove Fleet v20.2 | Stable Build")
+st.caption("Truelove Fleet v19.3-Stable | Zurück auf bewährte Version")
