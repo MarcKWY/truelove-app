@@ -1,78 +1,57 @@
 import streamlit as st
+import os
 
-# --- DESIGN & LIFESTYLE SETUP ---
-st.set_page_config(page_title="Truelove Dashboard", page_icon="🛥️", layout="wide")
+# --- SETUP ---
+st.set_page_config(page_title="Truelove Dashboard", layout="wide")
 
-# CSS für den "High-End" Look (Dark Mode mit Glas-Effekt)
+# CSS für den edlen Look
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #050a14;
-        color: #ffffff;
-    }
-    /* Die Karten für die Funktionen */
-    .metric-container {
+    .stApp { background-color: #050a14; color: white; }
+    .glass-card {
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px;
         padding: 20px;
-        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    h1, h2 { color: #00d4ff !important; font-family: 'Trebuchet MS', sans-serif; }
-    label { color: #ffffff !important; }
+    h1 { color: #00d4ff; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- BILDER-BEREICH (BOOT & LOGO) ---
-# Hier laden wir die Bilder direkt
-col_logo, col_text = st.columns([1, 3])
-with col_logo:
-    # Das Crownline Logo
-    st.image("https://logovector.net", width=180)
+# --- BILDER LADEN (LOKAL AUS GITHUB) ---
+col1, col2 = st.columns([1, 3])
 
-with col_text:
-    st.title("⚓ TRUELOVE | Skipper App")
-    st.write("Crownline 286 SC • Mercruiser V8 496 MAG (317 KW)")
+with col1:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=150)
+    else:
+        st.write("⚓ LOGO FEHLT")
 
-# DAS HAUPTBILD DEINES BOOTES (Crownline 286 SC)
-st.image("https://boats.com", 
-         caption="DEINE TRUELOVE - CROWNLINE 286 SC", 
-         use_container_width=True)
+with col2:
+    st.title("TRUELOVE: CROWNLINE 286 SC")
+    st.write("V8 496 MAG Power Dashboard")
+
+# DAS HAUPTBILD (DIREKT AUS DEINEM ORDNER)
+if os.path.exists("boot.jpg"):
+    st.image("boot.jpg", caption="Deine Truelove", use_container_width=True)
+else:
+    st.warning("⚠️ Bitte lade ein Foto namens 'boot.jpg' in dein GitHub-Repo hoch!")
 
 st.write("---")
 
 # --- FUNKTIONEN ---
-tab1, tab2, tab3 = st.tabs(["🚀 Navigation", "💰 Kosten (CHF)", "⚙️ Motor & Technik"])
+tab1, tab2 = st.tabs(["🚀 Reise-Planer", "💰 Kosten (CHF)"])
 
 with tab1:
-    st.subheader("Sprit-Kalkulator")
-    c1, c2 = st.columns(2)
-    with c1:
-        dist = st.number_input("Distanz (nm)", value=15.0)
-        speed = st.slider("Speed (kn)", 5, 45, 24)
-    with c2:
-        verbrauch = (dist / speed) * 55 # V8 Verbrauch
-        st.metric("Spritbedarf", f"{verbrauch:.1f} Liter", delta="Reservetank prüfen")
-        st.metric("Kosten Trip", f"CHF {verbrauch * 2.15:.2f}")
+    st.subheader("Sprit-Kalkulation")
+    dist = st.number_input("Distanz (nm)", value=20.0)
+    # 55 Liter pro Stunde für den V8 496 MAG bei Gleitfahrt
+    verbrauch = (dist / 24) * 55 
+    st.metric("Spritbedarf", f"{verbrauch:.1f} Liter")
+    st.metric("Kosten", f"CHF {verbrauch * 2.15:.2f}")
 
 with tab2:
-    st.subheader("Finanzen")
-    k1, k2 = st.columns(2)
-    with k1:
-        v = st.number_input("Versicherung/Jahr", value=1150)
-        w = st.number_input("Winterlager", value=2200)
-    with k2:
-        total = v + w + 380
-        st.metric("Total pro Jahr", f"CHF {total:,.2f}")
-        st.info(f"Rückstellung: CHF {total/12:.2f} / Monat")
-
-with tab3:
-    st.subheader("Motorraum (V8 496 MAG)")
-    # Bild vom Motor
-    st.image("https://pboat.com", width=400, caption="Der Herzschlag deiner Truelove")
-    st.progress(0.9)
-    st.write("✅ Ölstand & Kühlung: OK")
-    st.write("🔔 Service in 45 Stunden")
-
-st.write("---")
-st.caption("Truelove Premium System | Swiss Edition")
+    st.subheader("Fixkosten (CHF)")
+    v = st.number_input("Versicherung", value=1150)
+    w = st.number_input("Winterlager", value=2300)
+    st.metric("Total Jahr", f"CHF {v + w + 350:,.2f}")
