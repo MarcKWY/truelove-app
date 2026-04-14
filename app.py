@@ -63,6 +63,16 @@ st.markdown("""
     }
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
+    
+    /* Tabellen-Styling für schwarze Schrift auf weissem Grund */
+    [data-testid="stTable"] {
+        background-color: white;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    [data-testid="stTable"] td, [data-testid="stTable"] th {
+        color: black !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -85,14 +95,20 @@ if menu == "⛽ Tanken":
     st.subheader("⛽ Tank-Management")
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
     
-    t_lit = st.number_input("Liter", min_value=0.0, step=10.0)
-    t_pr = st.number_input("CHF / L", value=2.15)
+    t_lit = st.number_input("Liter", min_value=0.0, step=0.1, format="%.2f")
+    t_pr = st.number_input("CHF / L", value=2.15, format="%.2f")
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
     c1, c2 = st.columns(2)
     if c1.button("Speichern ✅"):
         if t_lit > 0:
-            st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
+            st.session_state.tank_daten.append({
+                "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Liter": round(t_lit, 2), 
+                "CHF/L": round(t_pr, 2),
+                "Total CHF": round(t_lit*t_pr, 2), 
+                "Wer": t_wer
+            })
             st.rerun()
     if c2.button("Letzten Eintrag löschen 🗑️"):
         if st.session_state.tank_daten:
@@ -100,7 +116,8 @@ if menu == "⛽ Tanken":
             st.rerun()
     
     if st.session_state.tank_daten:
-        st.table(pd.DataFrame(st.session_state.tank_daten))
+        df_tank = pd.DataFrame(st.session_state.tank_daten)
+        st.table(df_tank.style.format({"Liter": "{:.2f}", "CHF/L": "{:.2f}", "Total CHF": "{:.2f}"}))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "⚙️ Motor & Service":
@@ -111,21 +128,23 @@ elif menu == "⚙️ Motor & Service":
     st.markdown("""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
-    <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
-    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
+    <b>Typ:</b> V8 Big Block<br>
     <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
-    <b>Einspritzung:</b> Multi-Port EFI (PCM 555)<br>
     <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
     st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
-    s_preis = st.number_input("Kosten CHF", min_value=0.0)
+    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.05, format="%.2f")
     
     c3, c4 = st.columns(2)
     if c3.button("Eintrag speichern"):
         if s_arbeit:
-            st.session_state.service_historie.append({"Datum": datetime.now().strftime("%d.%m"), "Arbeit": s_arbeit, "CHF": s_preis})
+            st.session_state.service_historie.append({
+                "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Arbeit": s_arbeit, 
+                "Kosten CHF": round(s_preis, 2)
+            })
             st.rerun()
     if c4.button("Letzten Service löschen 🗑️"):
         if st.session_state.service_historie:
@@ -133,22 +152,21 @@ elif menu == "⚙️ Motor & Service":
             st.rerun()
     
     if st.session_state.service_historie:
-        st.table(pd.DataFrame(st.session_state.service_historie))
+        df_service = pd.DataFrame(st.session_state.service_historie)
+        st.table(df_service.style.format({"Kosten CHF": "{:.2f}"}))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Fixkosten & Übersicht")
     
-    # Eingabefelder für Fixkosten
-    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.0)
-    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.0)
-    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.0)
-    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.0)
+    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.00, format="%.2f")
+    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.00, format="%.2f")
+    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.00, format="%.2f")
+    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.00, format="%.2f")
     
-    # Berechnungen
-    sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
-    serv_sum = sum(i['CHF'] for i in st.session_state.service_historie)
+    sprit_sum = sum(i['Total CHF'] for i in st.session_state.tank_daten)
+    serv_sum = sum(i['Kosten CHF'] for i in st.session_state.service_historie)
     fix_sum = f_winter + f_platz + f_steuer + f_vers
     
     total_ohne_sprit = fix_sum + serv_sum
@@ -164,3 +182,5 @@ elif menu == "💰 Finanzen":
     
     st.info(f"⛽ Davon reine Benzinkosten: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
+
+st.caption("Truelove Bridge v25.1 - Precise Formatting")
