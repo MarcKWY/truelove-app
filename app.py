@@ -64,7 +64,6 @@ st.markdown("""
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
     
-    /* TABELLEN: Dunkelblau mit weisser Schrift */
     [data-testid="stTable"] {
         background-color: #0A1E3C !important;
         border: 1px solid #D4AF37 !important;
@@ -117,7 +116,15 @@ if menu == "⛽ Tanken":
             st.rerun()
     
     if st.session_state.tank_daten:
-        st.table(pd.DataFrame(st.session_state.tank_daten))
+        df_tank = pd.DataFrame(st.session_state.tank_daten)
+        st.table(df_tank)
+        
+        # NEU: Wer hat wie viel bezahlt
+        st.write("### 📊 Abrechnung Benzin")
+        df_tank["Total CHF"] = df_tank["Total CHF"].astype(float)
+        ausg = df_tank.groupby("Wer")["Total CHF"].sum()
+        st.info(f"Marc hat bezahlt: **CHF {ausg.get('Marc', 0.00):,.2f}**")
+        st.info(f"Fabienne hat bezahlt: **CHF {ausg.get('Fabienne', 0.00):,.2f}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "⚙️ Motor & Service":
@@ -129,13 +136,14 @@ elif menu == "⚙️ Motor & Service":
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
     <b>Hubraum:</b> 8.1 Liter V8 Big Block<br>
-    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
-    <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
-    st.write("### 🔧 Service Log")
+    st.write("### 🔧 Service Log & Rechnung")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
+    
+    # NEU: Foto Upload für Rechnung
+    s_foto = st.file_uploader("Rechnung hochladen (Foto/PDF)", type=['png', 'jpg', 'jpeg', 'pdf'])
     
     c3, c4 = st.columns(2)
     if c3.button("Eintrag speichern"):
@@ -143,7 +151,8 @@ elif menu == "⚙️ Motor & Service":
             st.session_state.service_historie.append({
                 "Datum": datetime.now().strftime("%d.%m.%Y"), 
                 "Arbeit": s_arbeit, 
-                "CHF": f"{s_preis:.2f}"
+                "CHF": f"{s_preis:.2f}",
+                "Rechnung": "✅ Hochgeladen" if s_foto else "❌ Fehlt"
             })
             st.rerun()
     if c4.button("Löschen 🗑️"):
