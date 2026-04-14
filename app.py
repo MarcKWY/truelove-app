@@ -12,6 +12,7 @@ st.markdown("""
     div[data-testid="stMetric"] { background-color: #F0F7FF !important; border: 1px solid #005A9C !important; border-radius: 10px; }
     .spec-card { background-color: #F8FAFC; padding: 20px; border-radius: 12px; border: 1px solid #E2E8F0; }
     .total-box { background-color: #005A9C; color: white; padding: 15px; border-radius: 10px; text-align: center; }
+    .zahler-box { background-color: #E1EFFE; padding: 10px; border-radius: 8px; border-left: 5px solid #005A9C; margin-bottom: 5px; }
     h1, h2, h3 { color: #005A9C !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -21,7 +22,7 @@ if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'zubehoer' not in st.session_state: st.session_state.zubehoer = []
 
 # --- HEADER ---
-col_l, col_r = st.columns([1, 4])
+col_l, col_r = st.columns()
 with col_l:
     for ext in ["png", "jpg", "jpeg"]:
         if os.path.exists(f"logo.{ext}"): st.image(f"logo.{ext}", width=100)
@@ -32,10 +33,11 @@ with col_r:
 # --- REITER-STRUKTUR ---
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["⛽ Tanken", "⚙️ Motor & Rechnungen", "🔧 Service & Zubehör", "💰 Kosten", "📖 Logbuch"])
 
-# TAB 1: TANKEN
+# TAB 1: TANKEN (Angepasst: Grösseres Bild & Abrechnung Marc/Fabienne)
 with tab1:
     st.subheader("⛽ Tank-Management")
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
+    if os.path.exists("tanken.jpg"): 
+        st.image("tanken.jpg", width=450) # Bild wieder etwas grösser
     
     col_in, col_res = st.columns(2)
     with col_in:
@@ -59,9 +61,20 @@ with tab1:
         if st.session_state.tank_daten:
             df = pd.DataFrame(st.session_state.tank_daten)
             st.metric("Total Benzin Saison", f"CHF {df['Total'].sum():,.2f}")
+            
+            # --- NEU: Abrechnung Marc & Fabienne ---
+            st.write("### 👥 Abrechnung")
+            ausgaben = df.groupby("Zahler")["Total"].sum()
+            c_m, c_f = st.columns(2)
+            with c_m:
+                st.markdown(f"<div class='zahler-box'><b>Marc:</b><br>CHF {ausgaben.get('Marc', 0.0):,.2f}</div>", unsafe_allow_html=True)
+            with c_f:
+                st.markdown(f"<div class='zahler-box'><b>Fabienne:</b><br>CHF {ausgaben.get('Fabienne', 0.0):,.2f}</div>", unsafe_allow_html=True)
+            
+            st.write("### Details")
             st.table(df)
 
-# TAB 2: MOTOR & RECHNUNGEN
+# TAB 2: MOTOR & RECHNUNGEN (Bleibt gleich)
 with tab2:
     st.subheader("⚙️ Motor-Daten & Rechnungs-Upload")
     col_m1, col_m2 = st.columns(2)
@@ -84,7 +97,7 @@ with tab2:
         uploaded_file = st.file_uploader("Rechnung/Foto hochladen", type=['jpg', 'jpeg', 'png'])
         if uploaded_file: st.image(uploaded_file, caption="Aktuelle Rechnung", use_container_width=True)
 
-# TAB 3: SERVICE & ZUBEHÖR
+# TAB 3: SERVICE & ZUBEHÖR (Bleibt gleich)
 with tab3:
     st.subheader("🔧 Service & Zubehör")
     col_s1, col_s2 = st.columns(2)
@@ -100,7 +113,7 @@ with tab3:
             st.session_state.zubehoer.append({"Teil": zub_n, "Preis": zub_p})
             st.rerun()
 
-# TAB 4: KOSTEN
+# TAB 4: KOSTEN (Bleibt gleich)
 with tab4:
     st.subheader("💰 Kostenübersicht")
     col_k1, col_k2 = st.columns(2)
@@ -116,11 +129,11 @@ with tab4:
         st.metric("Fixkosten", f"CHF {fix:,.2f}")
         st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN SAISON</h3><h1>CHF {fix + sprit_sum + zub_sum:,.2f}</h1></div>", unsafe_allow_html=True)
 
-# TAB 5: LOGBUCH
+# TAB 5: LOGBUCH (Bleibt gleich)
 with tab5:
     st.header("📖 Fahrtenbuch")
     if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", width=400)
     st.text_input("Törn-Ziel")
 
 st.write("---")
-st.caption("Truelove Fleet v18.0 | Stable Master Build")
+st.caption("Truelove Fleet v19.0 | Stable Master Build")
