@@ -30,23 +30,25 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* KORREKTUR: Der Rahmen umschliesst jetzt das Menü-Element direkt */
+    /* KORREKTUR: Rahmenbreite an Bild angepasst (100%), Schrift Weiss, Icons gross */
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85);
-        padding: 15px 25px;
+        padding: 15px 10px;
         border-radius: 15px;
         border: 2px solid #D4AF37;
         backdrop-filter: blur(10px);
-        margin-top: 20px;
+        margin-top: 10px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         display: flex;
-        justify-content: center;
+        justify-content: space-around;
+        width: 100%; /* Breite an das Bild angepasst */
     }
 
-    /* Schriftfarbe Silber für die Menüpunkte */
+    /* Schrift in WEISS und Emojis/Icons VERGRÖSSERT */
     div[data-testid="stRadio"] label {
-        color: #C0C0C0 !important;
+        color: #FFFFFF !important;
         font-weight: 500;
+        font-size: 22px !important; /* Icons und Text grösser */
     }
 
     .card {
@@ -82,7 +84,7 @@ st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_h
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION (Der Rahmen wird nun direkt vom Radio-Widget generiert)
+# NAVIGATION
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
                 key="nav_photo_overlay",
@@ -141,7 +143,7 @@ elif menu == "⚙️ Motor & Service":
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Finanzen")
-    # Hier folgen deine Finanz-Berechnungen
+    # Logik hier...
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.0")
+st.caption("Truelove Bridge v24.1")
