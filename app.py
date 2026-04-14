@@ -38,10 +38,18 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
+    /* TITEL: GRÖSSER UND GOLDEN */
     .truelove-title {
-        font-family: 'Georgia', serif; font-size: 58px; font-weight: bold;
-        color: #D4AF37 !important; text-align: center; margin-bottom: 0px;
+        font-family: 'Georgia', serif; 
+        font-size: 85px !important; 
+        font-weight: bold;
+        color: #D4AF37 !important; 
+        text-align: center; 
+        margin-bottom: 0px;
+        letter-spacing: 5px;
+        text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
     }
+    
     .crownline-subtitle {
         font-family: 'Helvetica Neue', sans-serif; font-size: 20px; text-align: center; margin-top: -10px;
     }
