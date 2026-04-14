@@ -3,137 +3,106 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- NAUTICAL STORY SETUP ---
-st.set_page_config(page_title="Truelove Story", layout="centered")
+# --- INSTA-LOG UI SETUP ---
+st.set_page_config(page_title="Truelove Insta-Log", layout="centered")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #F8F9FA; color: #001F3F; }
+    /* Dunkler, edler Hintergrund für den Feed-Look */
+    .stApp { background-color: #050a14; color: #ffffff; }
     
-    /* Story-Karten Design */
-    .story-card {
-        background-color: white;
-        padding: 25px;
+    /* Die Insta-Karten */
+    .insta-card {
+        position: relative;
+        background-color: rgba(255, 255, 255, 0.05);
         border-radius: 20px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        border: 1px solid #E6EBF0;
-        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        margin-bottom: 25px;
+        backdrop-filter: blur(10px);
     }
     
-    .story-title {
-        font-family: 'Georgia', serif;
-        color: #001F3F;
-        font-size: 24px;
-        border-bottom: 2px solid #D4AF37;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
+    /* Overlay für Zahlen direkt auf dem Bild */
+    .img-overlay {
+        background: rgba(0, 31, 63, 0.7);
+        color: #D4AF37;
+        padding: 10px 20px;
+        border-radius: 15px;
+        font-weight: bold;
+        display: inline-block;
+        margin-top: -50px;
+        position: relative;
+        border: 1px solid #D4AF37;
     }
 
-    /* Captain's Highlight Box */
-    .captain-box {
-        background: linear-gradient(135deg, #001F3F 0%, #003366 100%);
-        color: white !important;
-        padding: 20px;
-        border-radius: 15px;
-        text-align: center;
-        border-left: 8px solid #D4AF37;
-    }
-    
-    h1 { font-family: 'Georgia', serif; letter-spacing: 2px; color: #001F3F; }
+    h1, h2 { font-family: 'Helvetica Neue', sans-serif; font-weight: 200; letter-spacing: 3px; }
+    .stButton>button { background-color: transparent; border: 1px solid #D4AF37; color: #D4AF37; border-radius: 30px; }
     </style>
     """, unsafe_allow_html=True)
 
 # Daten-Speicher
-if 't_story' not in st.session_state: st.session_state.t_story = []
-if 's_story' not in st.session_state: st.session_state.s_story = []
+if 'insta_tank' not in st.session_state: st.session_state.insta_tank = []
+if 'insta_serv' not in st.session_state: st.session_state.insta_serv = []
 
-# --- TITELBILD & LOGO ---
-st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-if os.path.exists("logo.png"): st.image("logo.png", width=120)
-st.title("Truelove Chronicles")
-st.write("Crownline 286 SC | 8.2L V8 Power")
+# --- HEADER ---
+st.markdown("<h1 style='text-align: center;'>TRUELOVE</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #D4AF37;'>CROWNLINE 286 SC | V8 496 MAG HO</p>", unsafe_allow_html=True)
+
+# --- DER FEED ---
+
+# 1. TANKEN (Insta-Style)
+st.markdown("<div class='insta-card'>", unsafe_allow_html=True)
+if os.path.exists("tanken.jpg"): 
+    st.image("tanken.jpg", use_container_width=True)
+    st.markdown(f"<div class='img-overlay'>⛽ {sum(i['Liter'] for i in st.session_state.insta_tank):.1f} L</div>", unsafe_allow_html=True)
+
+st.write("### ⛽ Tank-Update")
+with st.expander("Tanken erfassen"):
+    c1, c2 = st.columns(2)
+    lit = c1.number_input("Liter", min_value=0.0, key="i_lit")
+    pr = c2.number_input("CHF/L", value=2.15, key="i_pri")
+    who = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="i_who")
+    if st.button("Log posten"):
+        st.session_state.insta_tank.append({"Liter": lit, "CHF": round(lit*pr, 2), "Wer": who})
+        st.rerun()
+
+if st.session_state.insta_tank:
+    st.write(f"Zuletzt getankt: {st.session_state.insta_tank[-1]['Wer']} ({st.session_state.insta_tank[-1]['Liter']}L)")
 st.markdown("</div>", unsafe_allow_html=True)
 
+# 2. MOTOR (Insta-Style)
+st.markdown("<div class='insta-card'>", unsafe_allow_html=True)
+if os.path.exists("motor.jpg"): 
+    st.image("motor.jpg", use_container_width=True)
+    st.markdown("<div class='img-overlay'>⚙️ 317 KW POWER</div>", unsafe_allow_html=True)
+
+st.write("### 🔧 Technik-Check")
+st.markdown("""
+- **V8 496 MAG HO** | 8.2L Big Block
+- Zweikreiskühlung (Closed System)
+- WOT: 4600-5000 RPM
+""")
+with st.expander("Service-Kosten eintragen"):
+    s_c = st.number_input("CHF", min_value=0.0, key="i_serv_c")
+    if st.button("Service speichern"):
+        st.session_state.insta_serv.append(s_c)
+        st.rerun()
+st.markdown("</div>", unsafe_allow_html=True)
+
+# 3. KOSTEN (Insta-Style)
+st.markdown("<div class='insta-card'>", unsafe_allow_html=True)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
+    
+total_fix = 5200 # Versicherung, Platz, Winterlager, Steuer
+total_sprit = sum(i['CHF'] for i in st.session_state.insta_tank)
+total_serv = sum(st.session_state.insta_serv)
+
+st.write("### 💰 Saison-Investment")
+c1, c2 = st.columns(2)
+c1.metric("Basis + Service", f"CHF {total_fix + total_serv:,.2f}")
+c2.metric("Total mit Sprit", f"CHF {total_fix + total_serv + total_sprit:,.2f}")
+st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("---")
-
-# --- STORY NAVIGATION ---
-menu = st.radio("Navigation", ["⚓ Übersicht", "⛽ Tank-Tagebuch", "⚙️ Maschinenraum", "💰 Finanzen"], horizontal=True)
-
-if menu == "⚓ Übersicht":
-    st.markdown("<div class='story-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='story-title'>Status-Bericht</div>", unsafe_allow_html=True)
-    
-    total_sprit = sum(i['CHF'] for i in st.session_state.t_story)
-    total_serv = sum(i['CHF'] for i in st.session_state.s_story)
-    
-    st.write(f"Die **Truelove** ist bereit für die nächste Fahrt.")
-    st.write(f"In dieser Saison wurden bereits **{sum(i['Liter'] for i in st.session_state.t_story):.1f} Liter** V8-Power verbraucht.")
-    
-    st.markdown(f"<div class='captain-box'><h3>Saison-Investition</h3><h2>CHF {total_sprit + total_serv + 5200:,.2f}</h2></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-elif menu == "⛽ Tank-Tagebuch":
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", use_container_width=True)
-    
-    with st.form("tank_form", clear_on_submit=True):
-        st.write("### Neuen Tankstopp festhalten")
-        c1, c2 = st.columns(2)
-        lit = c1.number_input("Liter", min_value=0.0)
-        pr = c2.number_input("CHF/L", value=2.15)
-        who = st.select_slider("Bezahlt von", options=["Marc", "Fabienne"])
-        if st.form_submit_button("Logbuch aktualisieren"):
-            st.session_state.t_story.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": lit, "CHF": round(lit*pr, 2), "Wer": who})
-            st.rerun()
-
-    if st.session_state.t_story:
-        for entry in reversed(st.session_state.t_story):
-            st.markdown(f"**{entry['Datum']}**: {entry['Wer']} hat **{entry['Liter']}L** für **CHF {entry['CHF']}** getankt.")
-        if st.button("Letzten Eintrag löschen"):
-            st.session_state.t_story.pop()
-            st.rerun()
-
-elif menu == "⚙️ Maschinenraum":
-    st.markdown("<div class='story-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='story-title'>V8 496 MAG HO Specs</div>", unsafe_allow_html=True)
-    col_img, col_txt = st.columns([1, 1.2])
-    with col_img:
-        if os.path.exists("motor.jpg"): st.image("motor.jpg")
-    with col_txt:
-        st.write("**Kraft:** 317 kW / 431 PS")
-        st.write("**Hubraum:** 8.2 Liter Big Block")
-        st.write("**Kühlung:** Zweikreis (Closed)")
-        st.write("**WOT:** 4600 - 5000 RPM")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    with st.container(border=True):
-        st.write("### Service & Reparatur")
-        s_txt = st.text_input("Was wurde gemacht?")
-        s_chf = st.number_input("Kosten", min_value=0.0)
-        if st.button("Eintrag speichern"):
-            st.session_state.s_story.append({"Arbeit": s_txt, "CHF": s_chf})
-            st.rerun()
-
-elif menu == "💰 Finanzen":
-    if os.path.exists("kosten.jpg"): st.image("kosten.jpg", use_container_width=True)
-    st.markdown("<div class='story-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='story-title'>Fixe Kosten</div>", unsafe_allow_html=True)
-    k1, k2 = st.columns(2)
-    v = k1.number_input("Versicherung", value=1150.0)
-    p = k2.number_input("Bootsplatz", value=1500.0)
-    w = k1.number_input("Winterlager", value=2200.0)
-    s = k2.number_input("Steuern", value=350.0)
-    
-    fix_sum = v + p + w + s
-    sprit_sum = sum(i['CHF'] for i in st.session_state.t_story)
-    serv_sum = sum(i['CHF'] for i in st.session_state.s_story)
-    
-    st.write("---")
-    st.markdown(f"**Basis-Kosten:** CHF {fix_sum + serv_sum:,.2f}")
-    st.markdown(f"<div class='captain-box'><h3>Total inkl. Benzin</h3><h2>CHF {fix_sum + serv_sum + sprit_sum:,.2f}</h2></div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-st.write("---")
-st.caption("Truelove Chronicles v21.0 | Story Edition")
+st.caption("Truelove v22.0 | Insta-Log Edition")
