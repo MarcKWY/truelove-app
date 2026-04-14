@@ -3,42 +3,36 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: HELL & FREUNDLICH ---
+# --- SETUP: HELL & LESBAR ---
 st.set_page_config(page_title="Truelove Dashboard", layout="wide")
 
-# CSS für maximale Lesbarkeit (Heller Hintergrund, dunkle Schrift)
 st.markdown("""
     <style>
-    .stApp { background-color: #F4F7F9; color: #1A1C1E; }
-    
-    /* Metrics: Hellweiss mit blauem Rand */
+    .stApp { background-color: #F8FAFC; color: #1E293B; }
     div[data-testid="stMetric"] {
         background-color: #FFFFFF !important;
         border: 2px solid #005A9C !important;
-        border-radius: 15px !important;
-        padding: 20px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+        border-radius: 12px !important;
     }
-    
-    /* Tabelle: Kontrastreich */
-    .stDataFrame, table { 
-        background-color: white !important; 
-        color: black !important; 
+    .spec-card {
+        background-color: #FFFFFF;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    
-    /* Reiter: Blau/Grau Design */
-    .stTabs [data-baseweb="tab-list"] { background-color: #E1E8ED; border-radius: 10px; padding: 5px; }
-    .stTabs [data-baseweb="tab"] { color: #005A9C !important; font-weight: bold; font-size: 18px; }
-    
-    h1, h2, h3 { color: #005A9C !important; font-family: 'Helvetica Neue', sans-serif; }
-    label { color: #1A1C1E !important; font-weight: bold !important; }
-    
-    /* Eingabefelder weiss machen */
-    input { background-color: white !important; border: 1px solid #CED4DA !important; }
+    .zahler-box {
+        background-color: #E0F2FE;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 5px solid #0369A1;
+        margin-top: 10px;
+    }
+    h1, h2, h3 { color: #005A9C !important; }
+    b { color: #0369A1; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATEN-SPEICHER ---
 if 'tank_daten' not in st.session_state:
     st.session_state.tank_daten = []
 
@@ -47,29 +41,26 @@ col_l, col_r = st.columns([1, 4])
 with col_l:
     for ext in ["png", "jpg", "jpeg", "PNG"]:
         if os.path.exists(f"logo.{ext}"):
-            st.image(f"logo.{ext}", width=120)
+            st.image(f"logo.{ext}", width=100)
             break
 with col_r:
     st.title("⚓ TRUELOVE | Skipper Zentrale")
-    st.markdown(f"**Crownline 286 SC** | Mercruiser 496 MAG HO | Saison {datetime.now().year}")
+    st.write(f"**Crownline 286 SC** | Mercruiser 496 MAG HO | Saison {datetime.now().year}")
 
 # --- REITER ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "⛽ Tanken", "🔧 Wartung", "⚙️ Motor", "💰 Kosten", "📖 Logbuch"
-])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["⛽ Tanken", "🔧 Wartung", "⚙️ Motor-Specs", "💰 Kosten", "📖 Logbuch"])
 
 with tab1:
-    st.subheader("⛽ Tank-Management")
+    st.subheader("⛽ Tank-Abrechnung")
     col_in, col_res = st.columns([1, 2])
     
     with col_in:
-        with st.container():
-            st.write("### Neuer Eintrag")
+        with st.container(border=True):
+            st.write("**Neuer Stopp**")
             t_datum = st.date_input("Datum", datetime.now())
             t_liter = st.number_input("Liter (L)", min_value=0.0, step=10.0)
             t_preis = st.number_input("CHF / L", value=2.15)
             t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
-            
             if st.button("Speichern 📥", use_container_width=True):
                 if t_liter > 0:
                     st.session_state.tank_daten.append({
@@ -80,9 +71,9 @@ with tab1:
                         "Zahler": t_wer
                     })
                     st.rerun()
-
-        st.write("---")
+        
         if st.session_state.tank_daten:
+            st.write("---")
             if st.button("🗑️ Letzten Eintrag löschen"):
                 st.session_state.tank_daten.pop()
                 st.rerun()
@@ -91,51 +82,69 @@ with tab1:
         if st.session_state.tank_daten:
             df = pd.DataFrame(st.session_state.tank_daten)
             
-            # Die Gesamtübersicht (Metric Cards)
-            c1, c2 = st.columns(2)
-            c1.metric("Gesamt Liter", f"{df['Liter'].sum():.1f} L")
-            c2.metric("Gesamt Kosten", f"CHF {df['Total CHF'].sum():,.2f}")
+            # Gesamt-Metrics
+            m1, m2 = st.columns(2)
+            m1.metric("Gesamt Liter", f"{df['Liter'].sum():.1f} L")
+            m2.metric("Gesamt Kosten", f"CHF {df['Total CHF'].sum():,.2f}")
             
-            st.write("### Saison-Details")
-            st.table(df) # table ist oft besser lesbar als dataframe
-
-            # Wer hat wie viel bezahlt?
-            st.write("### Verteilung")
+            # NEU: Abrechnung Marc & Fabienne
+            st.write("### 👥 Wer hat bezahlt?")
             ausgaben = df.groupby("Zahler")["Total CHF"].sum()
-            st.bar_chart(ausgaben)
+            
+            c_marc, c_fab = st.columns(2)
+            with c_marc:
+                betrag_m = ausgaben.get("Marc", 0.0)
+                st.markdown(f"<div class='zahler-box'><b>Marc:</b><br>CHF {betrag_m:,.2f}</div>", unsafe_allow_html=True)
+            with c_fab:
+                betrag_f = ausgaben.get("Fabienne", 0.0)
+                st.markdown(f"<div class='zahler-box'><b>Fabienne:</b><br>CHF {betrag_f:,.2f}</div>", unsafe_allow_html=True)
+            
+            st.write("### Details")
+            st.table(df)
         else:
             if os.path.exists("tanken.jpg"):
                 st.image("tanken.jpg", use_container_width=True)
 
 with tab2:
-    st.subheader("🔧 Wartungshistorie")
+    st.subheader("🔧 Wartung")
     if os.path.exists("wartung.jpg"):
         st.image("wartung.jpg", width=600)
-    st.info("**Hinweis:** Ölwechsel Mercruiser 496 fällig nach 50 Betriebsstunden.")
+    st.info("Checkliste: Impeller, Getriebeöl, Anoden (Saison 2024)")
 
 with tab3:
-    st.subheader("⚙️ Triebwerk: 496 MAG HO")
-    if os.path.exists("motor.jpg"):
-        st.image("motor.jpg", width=500)
-    st.markdown("""
-    - **Hubraum:** 8.2 Liter V8
-    - **Leistung:** 317 kW / 431 PS
-    - **Kühlung:** Zweikreissystem
-    """)
+    st.subheader("⚙️ Motor-Spezifikationen")
+    col_m_img, col_m_data = st.columns([1, 1])
+    with col_m_img:
+        if os.path.exists("motor.jpg"):
+            st.image("motor.jpg", use_container_width=True)
+    with col_m_data:
+        st.markdown(f"""
+        <div class="spec-card">
+        <h3>Mercruiser 496 MAG HO</h3>
+        <ul>
+            <li><b>Leistung:</b> 317 kW / 431 PS</li>
+            <li><b>Typ:</b> V8 Big Block (8.2 Liter)</li>
+            <li><b>Kühlung:</b> Zweikreissystem (Closed)</li>
+            <li><b>Drehzahl (WOT):</b> 4600 - 5000 RPM</li>
+            <li><b>Einspritzung:</b> Multi-Point Injection (MPI)</li>
+            <li><b>Hubraum:</b> 496 cubic inches</li>
+            <li><b>Antrieb:</b> Kompatibel mit Bravo One/Two/Three</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
 with tab4:
-    st.subheader("💰 Jährliche Fixkosten")
+    st.subheader("💰 Kosten")
     if os.path.exists("kosten.jpg"):
         st.image("kosten.jpg", width=500)
-    # Kalkulations-Beispiel
-    v = st.number_input("Versicherung/Jahr", value=1150)
-    w = st.number_input("Winterlager", value=2300)
-    st.metric("Total Kosten", f"CHF {v + w + 350:,.2f}")
+    v = st.number_input("Versicherung (CHF)", value=1150)
+    w = st.number_input("Winterlager (CHF)", value=2400)
+    st.metric("Total Fixkosten", f"CHF {v + w + 350:,.2f}")
 
 with tab5:
-    st.subheader("📖 Fahrtenbuch")
-    st.text_input("Törn-Ziel (z.B. Vierwaldstättersee)")
-    st.button("Logbuch-Eintrag erstellen")
+    st.subheader("📖 Logbuch")
+    st.text_input("Zielort")
+    st.button("Törn speichern")
 
 st.write("---")
-st.caption(f"Truelove Fleet v13.0 | Light Design for better visibility")
+st.caption("Truelove Fleet v14.0 | Marc & Fabienne Edition")
