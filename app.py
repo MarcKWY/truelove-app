@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: BRIDGE DESIGN (CONTROL ON IMAGE) ---
+# --- SETUP: HORIZON BRIDGE DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
@@ -30,19 +30,20 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* Container für die Navigation, die über dem Bild schwebt */
-    .nav-overlay-bridge {
-        background-color: rgba(5, 10, 20, 0.75);
-        padding: 10px;
+    /* Horizontale Navigation, die IM unteren Teil des Bildes schwebt */
+    .nav-overlay-horizon {
+        background-color: rgba(5, 15, 30, 0.85);
+        padding: 15px;
         border-radius: 15px;
         border: 1px solid #D4AF37;
-        backdrop-filter: blur(10px);
-        margin-top: -75px; /* Schiebt das Menü auf das Bild hoch */
+        backdrop-filter: blur(15px);
+        margin-top: -90px; /* Schiebt das Menü ins Bild hinein */
         position: relative;
         z-index: 999;
         width: 95%;
         margin-left: auto;
         margin-right: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
 
     .card {
@@ -50,7 +51,7 @@ st.markdown("""
         padding: 25px;
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 15px;
+        margin-top: 30px;
     }
     
     .spec-card { 
@@ -63,8 +64,9 @@ st.markdown("""
     h2, h3, b { color: #D4AF37 !important; }
     .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
     
-    /* Radio Buttons zentrieren */
+    /* Radio Buttons horizontal und zentriert */
     div[data-testid="stHorizontalBlock"] { justify-content: center; }
+    div[data-testid="stMarkdownContainer"] p { font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -76,14 +78,20 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD (DAS BOOT)
+# HAUPTBILD
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# ZENTRALE STEUERUNG (SCHWEBEND AUF DEM BILD)
-st.markdown("<div class='nav-overlay-bridge'>", unsafe_allow_html=True)
-menu = st.radio("ZENTRALE STEUERUNG", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
+# HORIZONTALE ZENTRALE STEUERUNG (IM BILD SCHWEBEND)
+st.markdown("<div class='nav-overlay-horizon'>", unsafe_allow_html=True)
+menu = st.radio("STEUERUNG", 
+                ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
+                key="nav_horizon",
+                horizontal=True,
+                label_visibility="collapsed")
 st.markdown("</div>", unsafe_allow_html=True)
+
+st.write("##") # Abstandhalter
 
 # --- BEREICHE ---
 
@@ -107,7 +115,7 @@ if menu == "⛽ Tanken":
     if st.session_state.tank_daten:
         df_t = pd.DataFrame(st.session_state.tank_daten)
         ausg = df_t.groupby("Wer")["Total"].sum()
-        st.write(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
+        st.info(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
         st.table(df_t)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -121,7 +129,7 @@ elif menu == "⚙️ Motor & Service":
     if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
     
     st.write("### 🔧 Service Log")
-    s_arbeit = st.text_input("Arbeit")
+    s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0)
     if st.button("Eintrag speichern"):
         st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
@@ -146,4 +154,4 @@ elif menu == "💰 Finanzen":
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("---")
-st.caption("Truelove Bridge Build v23.3")
+st.caption("Truelove Horizon Build v23.5")
