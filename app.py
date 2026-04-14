@@ -8,18 +8,15 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
-    /* GLOBALE FARBEN */
+    /* GLOBALE FARBEN & SCHRIFTEN */
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    
-    /* ALLE Schriften standardmäßig Weiss */
-    .stApp, label, p, span, div { color: #FFFFFF; }
+    * { color: #FFFFFF; } /* Alles weiss */
 
-    /* SCHWARZE SCHRIFT in weissen/hellen Feldern (Inputs, Tabellen) */
-    input, select, textarea, [data-testid="stTable"] td, [data-testid="stTable"] th { 
+    /* SCHWARZE SCHRIFT IN EINGABEFELDERN & TABELLEN */
+    input, [data-testid="stTable"] td, [data-testid="stTable"] th, .stNumberInput div div input { 
         color: #000000 !important; 
     }
     
-    /* Header & Footer ausblenden */
     #MainMenu, header, footer { visibility: hidden; }
     [data-testid="stDecoration"] { display: none; }
 
@@ -42,7 +39,7 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* MENÜ-BAND: Icons dominant, Breite 100%, KEIN zweiter Balken */
+    /* MENÜ-BAND: BREITE AN BILD ANGEPASST (100%), KEIN UNTERER BALKEN */
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85) !important;
         padding: 20px 10px !important;
@@ -53,15 +50,15 @@ st.markdown("""
         display: flex;
         justify-content: space-around;
         width: 100% !important;
+        border-bottom: 2px solid #D4AF37 !important; /* Verhindert das "Abbrechen" des Rahmens */
     }
     
-    /* Entfernt den grauen Unterstrich/Balken unter dem Radio-Widget */
     div[data-testid="stRadio"] { border: none !important; }
 
-    /* DOMINANTE ICONS & WEISSE SCHRIFT IM MENÜ */
+    /* DOMINANTE ICONS & WEISSE SCHRIFT */
     div[data-testid="stRadio"] label {
         font-weight: bold !important;
-        font-size: 32px !important; /* GROSSE ICONS */
+        font-size: 35px !important; /* NOCH GRÖSSER */
         color: #FFFFFF !important;
     }
 
@@ -78,6 +75,7 @@ st.markdown("""
         padding: 20px; 
         border-radius: 12px; 
         border-left: 6px solid #D4AF37;
+        line-height: 1.6;
     }
     
     h2, h3, .spec-card b { color: #D4AF37 !important; }
@@ -97,11 +95,8 @@ if os.path.exists("boot_gross.jpg"):
     st.image("boot_gross.jpg", use_container_width=True)
 
 # NAVIGATION
-menu = st.radio("BRIDGE CONTROL", 
-                ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
-                key="nav_radio_final",
-                horizontal=True,
-                label_visibility="collapsed")
+menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
+                key="nav_radio_final_v2", horizontal=True, label_visibility="collapsed")
 
 # --- BEREICHE ---
 if menu == "⛽ Tanken":
@@ -109,7 +104,7 @@ if menu == "⛽ Tanken":
     st.subheader("⛽ Tank-Management")
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     
-    t_lit = st.number_input("Liter", min_value=0.0, step=10.0)
+    t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
     t_pr = st.number_input("CHF / L", value=2.15)
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
@@ -126,18 +121,36 @@ elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⚙️ Vollständige Motordaten")
     if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+    
     st.markdown("""<div class='spec-card'>
-    <b>Modell:</b> Mercruiser 496 MAG HO<br>
-    <b>Leistung:</b> 425 HP (317 kW)<br>
-    <b>Hubraum:</b> 8.1 Liter V8
+    <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
+    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
+    <b>Typ:</b> V8 Big Block<br>
+    <b>Hubraum:</b> 8.1 Liter (496 cu in)<br>
+    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
+    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
+    <b>Ölkapazität:</b> ca. 8.5 Liter<br>
+    <b>Kühlsystem:</b> Zweikreiskühlung (Closed Cooling)
     </div>""", unsafe_allow_html=True)
+    
+    st.write("### 🔧 Service Log & Rechner")
+    s_arbeit = st.text_input("Was wurde gemacht?")
+    s_preis = st.number_input("Kosten CHF", min_value=0.0, key="s_preis")
+    if st.button("Eintrag speichern"):
+        st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
+        st.rerun()
+    
+    if st.session_state.service_historie:
+        st.table(pd.DataFrame(st.session_state.service_historie))
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Finanzen")
     sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
-    st.metric("Benzinkosten Total", f"CHF {sprit_sum:,.2f}")
+    serv_sum = sum(i['CHF'] for i in st.session_state.service_historie)
+    st.metric("Benzinkosten", f"CHF {sprit_sum:,.2f}")
+    st.metric("Servicekosten", f"CHF {serv_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v24.4 - High Contrast Fix")
+st.caption("Truelove Bridge v24.5 - Full Restore")
