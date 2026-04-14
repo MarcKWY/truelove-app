@@ -3,13 +3,13 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- INSTA-LOG v22.2 (STABLE) ---
-st.set_page_config(page_title="Truelove Insta-Log", layout="centered")
+# --- SETUP: MODERN & VOLLSTÄNDIG ---
+st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050a14; color: #ffffff; }
-    .insta-card {
+    .card {
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -17,73 +17,89 @@ st.markdown("""
         margin-bottom: 25px;
         backdrop-filter: blur(10px);
     }
-    .img-overlay {
-        background: rgba(0, 50, 100, 0.8);
-        color: #D4AF37;
-        padding: 8px 15px;
-        border-radius: 12px;
-        font-weight: bold;
-        position: relative;
-        margin-top: -45px;
-        margin-left: 10px;
-        display: inline-block;
-        border: 1px solid #D4AF37;
-    }
-    .like-text { color: #D4AF37; font-weight: bold; font-size: 1.2em; }
+    .spec-card { background-color: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; color: white; border-left: 5px solid #D4AF37; }
+    h1, h2, h3 { color: #D4AF37 !important; font-family: 'Helvetica Neue', sans-serif; letter-spacing: 2px; }
+    b { color: #D4AF37; }
+    .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 10px !important; padding: 10px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Daten-Speicher initialisieren
-if 'insta_tank' not in st.session_state: st.session_state.insta_tank = []
-if 'likes' not in st.session_state: st.session_state.likes = 0
+# Daten-Speicher
+if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
+if 'service_historie' not in st.session_state: st.session_state.service_historie = []
 
 # --- HEADER ---
-st.markdown("<h1 style='text-align: center; letter-spacing: 5px;'>TRUELOVE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #D4AF37;'>INSTA-LOG EDITION</p>", unsafe_allow_html=True)
-
-# 1. HAUPTBILD (DEIN NEUES FOTO)
-st.markdown("<div class='insta-card'>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>TRUELOVE</h1>", unsafe_allow_html=True)
 if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True)
-else:
-    st.warning("Bild 'boot_gross.jpg' nicht gefunden. Bitte auf GitHub hochladen!")
+    st.image("boot_gross.jpg", use_container_width=True, caption="Crownline 286 SC")
 
-# Like-Bereich stabilisiert
-col_l1, col_l2 = st.columns(2)
-with col_l1:
-    if st.button("❤️ Like", use_container_width=True):
-        st.session_state.likes += 1
+st.write("---")
+
+# --- NAVIGATION ---
+menu = st.radio("Bereich wählen", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Kosten & Finanzen"], horizontal=True)
+
+if menu == "⛽ Tanken":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=400)
+    
+    with st.container():
+        t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
+        t_pr = st.number_input("CHF / L", value=2.15, key="t_pr")
+        t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
+        
+        c1, c2 = st.columns(2)
+        if c1.button("Speichern ✅", use_container_width=True):
+            if t_lit > 0:
+                st.session_state.tank_daten.append({"Datum": datetime.now().strftime("%d.%m"), "Liter": t_lit, "Total": round(t_lit*t_pr, 2), "Wer": t_wer})
+                st.rerun()
+        if c2.button("Letzten löschen 🗑️", use_container_width=True):
+            if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
+
+    if st.session_state.tank_daten:
+        df_t = pd.DataFrame(st.session_state.tank_daten)
+        st.write("### Abrechnung Marc & Fabienne")
+        ausg = df_t.groupby("Wer")["Total"].sum()
+        st.write(f"Marc: **CHF {ausg.get('Marc',0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne',0):,.2f}**")
+        st.table(df_t)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+elif menu == "⚙️ Motor & Service":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("""<div class='spec-card'><h3>Mercruiser 496 MAG HO</h3>
+    • <b>Leistung:</b> 317 kW / 431 PS HO<br>• <b>Hubraum:</b> 8.2L V8 Big Block<br>
+    • <b>Kühlung:</b> Zweikreissystem<br>• <b>WOT:</b> 4600 - 5000 RPM<br>
+    • <b>Ölkapazität:</b> 8.5 Liter<br>• <b>Zündfolge:</b> 1-8-4-3-6-5-7-2</div>""", unsafe_allow_html=True)
+    
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
+    
+    st.write("### 🔧 Service & Reparatur")
+    s_arbeit = st.text_input("Was wurde gemacht?")
+    s_preis = st.number_input("Kosten CHF", min_value=0.0)
+    if st.button("Eintrag speichern"):
+        st.session_state.service_historie.append({"Arbeit": s_arbeit, "CHF": s_preis})
         st.rerun()
-with col_l2:
-    st.markdown(f"<p class='like-text'>{st.session_state.likes} Likes</p>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+        
+    st.write("### 📂 Rechnungs-Upload")
+    up = st.file_uploader("Foto der Rechnung", type=['jpg', 'jpeg', 'png'])
+    if up: st.image(up, caption="Hochgeladenes Dokument", use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# 2. TANK-FEED
-st.markdown("<div class='insta-card'>", unsafe_allow_html=True)
-if os.path.exists("tanken.jpg"): 
-    st.image("tanken.jpg", use_container_width=True)
-    liter_sum = sum(i['Liter'] for i in st.session_state.insta_tank)
-    st.markdown(f"<div class='img-overlay'>⛽ {liter_sum:.1f} L Saison</div>", unsafe_allow_html=True)
+elif menu == "💰 Kosten & Finanzen":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.write("### Fixkosten & Saison-Total")
+    c1, c2 = st.columns(2)
+    k_v = c1.number_input("Versicherung (CHF)", value=1150.0)
+    k_p = c2.number_input("Bootsplatz (CHF)", value=1500.0)
+    k_w = c1.number_input("Winterlager (CHF)", value=2200.0)
+    k_s = c2.number_input("Steuern (CHF)", value=350.0)
+    
+    fix_sum = k_v + k_p + k_w + k_s
+    sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
+    serv_sum = sum(i['CHF'] for i in st.session_state.service_historie)
+    
+    st.write("---")
+    st.metric("Total Kosten OHNE Benzin", f"CHF {fix_sum + serv_sum:,.2f}")
+    st.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {fix_sum + serv_sum + sprit_sum:,.2f}")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-with st.expander("Tanken eintragen"):
-    lit = st.number_input("Liter", min_value=0.0, key="lit_input")
-    pr = st.number_input("Preis pro Liter (CHF)", value=2.15, key="price_input")
-    who = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="who_input")
-    if st.button("Eintrag posten", use_container_width=True):
-        if lit > 0:
-            st.session_state.insta_tank.append({"Liter": lit, "CHF": round(lit*pr, 2), "Wer": who})
-            st.rerun()
-
-if st.session_state.insta_tank:
-    last = st.session_state.insta_tank[-1]
-    st.write(f"**Letzter Post:** {last['Wer']} hat {last['Liter']}L getankt.")
-st.markdown("</div>", unsafe_allow_html=True)
-
-# 3. SAISON-BILANZ
-st.markdown("<div class='insta-card'>", unsafe_allow_html=True)
-total_sprit = sum(i['CHF'] for i in st.session_state.insta_tank)
-st.write("### 📊 Saison-Statistik")
-st.metric("Gesamtkosten (Fix + Sprit)", f"CHF {5200 + total_sprit:,.2f}")
-st.markdown("</div>", unsafe_allow_html=True)
-
-st.caption("Truelove Insta-Log v22.2 | Stable Build")
+st.caption("Truelove Master Build v23.0")
