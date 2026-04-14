@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP: HORIZON BRIDGE DESIGN ---
+# --- SETUP: OVERLAY BRIDGE DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
@@ -30,20 +30,23 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* Horizontale Navigation, die IM unteren Teil des Bildes schwebt */
-    .nav-overlay-horizon {
-        background-color: rgba(5, 15, 30, 0.85);
+    /* Das Menü, das DIREKT ÜBER dem Bild schwebt */
+    .nav-overlay-photo {
+        background-color: rgba(5, 15, 30, 0.85); /* Halbdurchsichtig */
         padding: 15px;
         border-radius: 15px;
-        border: 1px solid #D4AF37;
-        backdrop-filter: blur(15px);
-        margin-top: -90px; /* Schiebt das Menü ins Bild hinein */
+        border: 2px solid #D4AF37;
+        backdrop-filter: blur(10px);
+        
+        /* Dieser Teil schiebt das Menü ÜBER das Bild */
         position: relative;
+        margin-top: -110px; 
         z-index: 999;
-        width: 95%;
+        
+        width: 90%;
         margin-left: auto;
         margin-right: auto;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
     .card {
@@ -51,7 +54,7 @@ st.markdown("""
         padding: 25px;
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 30px;
+        margin-top: 40px; /* Platz zum schwebenden Menü */
     }
     
     .spec-card { 
@@ -64,9 +67,8 @@ st.markdown("""
     h2, h3, b { color: #D4AF37 !important; }
     .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
     
-    /* Radio Buttons horizontal und zentriert */
+    /* Radio Buttons Styling */
     div[data-testid="stHorizontalBlock"] { justify-content: center; }
-    div[data-testid="stMarkdownContainer"] p { font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -78,20 +80,20 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD
+# HAUPTBILD (DIESES BILD WIRD ÜBERLAGERT)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# HORIZONTALE ZENTRALE STEUERUNG (IM BILD SCHWEBEND)
-st.markdown("<div class='nav-overlay-horizon'>", unsafe_allow_html=True)
-menu = st.radio("STEUERUNG", 
+# DIE STEUERUNG - JETZT DIREKT AUF DEM FOTO
+st.markdown("<div class='nav-overlay-photo'>", unsafe_allow_html=True)
+menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
-                key="nav_horizon",
+                key="nav_photo_overlay",
                 horizontal=True,
                 label_visibility="collapsed")
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.write("##") # Abstandhalter
+st.write("##") # Kleiner Puffer
 
 # --- BEREICHE ---
 
@@ -154,4 +156,4 @@ elif menu == "💰 Finanzen":
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("---")
-st.caption("Truelove Horizon Build v23.5")
+st.caption("Truelove Bridge Overlay v23.6")
