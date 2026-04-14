@@ -1,85 +1,87 @@
 import streamlit as st
 from datetime import datetime
 
-# --- PREMIUM DESIGN SETUP ---
-st.set_page_config(page_title="Truelove - Crownline 286 SC", page_icon="⚓", layout="wide")
+# --- SETUP & MARITIMES DESIGN ---
+st.set_page_config(page_title="Truelove Dashboard", page_icon="🛥️", layout="wide")
 
-# Custom CSS für den "Luxus-Yacht" Look
+# CSS für Hintergrundbild, Transparenz und Farben
 st.markdown("""
     <style>
-    .stApp { background-color: #0b0e14; color: #e0e0e0; }
-    [data-testid="stMetricValue"] { color: #d4af37 !important; font-weight: bold; }
-    .stButton>button { border: 1px solid #d4af37; background-color: #1a1f26; color: #d4af37; border-radius: 5px; height: 3em; }
-    .stButton>button:hover { background-color: #d4af37; color: #0b0e14; }
-    .css-1kyx600 { background-color: #161b22; border-radius: 15px; padding: 20px; border: 1px solid #30363d; }
-    h1, h2, h3 { color: #d4af37; font-family: 'Playfair Display', serif; }
+    /* Hintergrundbild (Wasser-Textur) */
+    .stApp {
+        background-image: url("https://unsplash.com");
+        background-attachment: fixed;
+        background-size: cover;
+    }
+    
+    /* Boxen halbdurchsichtig (Frosted Glass Effekt) */
+    div.stMetric, div[data-testid="stExpander"], div.stTabs, .st-emotion-cache-1kyx600 {
+        background-color: rgba(255, 255, 255, 0.85) !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+        color: #002d5a !important;
+    }
+    
+    /* Texte anpassen */
+    h1, h2, h3 { color: #ffffff !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+    p, label { color: #002d5a !important; font-weight: bold; }
+    
+    /* Tabs Design */
+    .stTabs [data-baseweb="tab-list"] { background-color: rgba(0, 45, 90, 0.8); border-radius: 10px; }
+    .stTabs [data-baseweb="tab"] { color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- HEADER MIT LOGO ---
-col_logo, col_info = st.columns([1, 3])
+# --- HEADER ---
+col_logo, col_title = st.columns([1, 2])
 with col_logo:
-    # Stabilerer Logo-Link
     st.image("https://crownline.com", width=220)
 
-with col_info:
-    st.title("TRUELOVE | Skipper Dashboard")
-    st.markdown("#### Crownline 286 SC | 8.2L Mercruiser V8 496 MAG")
+with col_title:
+    st.title("⚓ TRUELOVE: Crownline 286 SC")
+    st.markdown("<p style='color:white; font-size:1.2em;'>V8 496 MAG Power Dashboard</p>", unsafe_allow_html=True)
 
-st.write("---")
-
-# --- WARTUNGS-ALARM (Neu!) ---
-with st.container():
-    st.subheader("🛠️ Maschinenraum & Wartung")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Motorleistung", "317 KW / 431 PS")
-    with c2:
-        last_service = 450 # Beispielwert
-        st.metric("Letzter Service bei", f"{last_service} h")
-    with c3:
-        next_service = 500
-        st.metric("Nächster Service fällig", f"{next_service} h")
-    
-    st.warning(f"🔔 Hinweis: In ca. {next_service - last_service} Betriebsstunden ist der Ölwechsel für den V8 fällig.")
+# --- BILDER-GALERIE (Macht es lebendig) ---
+col_img1, col_img2 = st.columns(2)
+with col_img1:
+    st.image("https://boats.com", caption="Crownline SC Series", use_container_width=True)
+with col_img2:
+    st.image("https://pboat.com", caption="8.2L Mercruiser V8", use_container_width=True)
 
 # --- NAVIGATION ---
-tab_trip, tab_kosten, tab_log = st.tabs(["🚀 Törn-Planer", "💰 Finanzen (CHF)", "📋 Bordbuch"])
+tab1, tab2, tab3 = st.tabs(["🚀 Reise-Planer", "💰 Kosten (CHF)", "📋 Bordbuch & Technik"])
 
-with tab_trip:
-    st.subheader("Sprit & Reichweite")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        dist = st.number_input("Distanz (Seemeilen)", value=20.0)
-        speed = st.slider("Reisegeschwindigkeit (kn)", 5, 45, 24)
-        tank_inhalt = st.slider("Aktueller Tankstand (L)", 0, 300, 180)
-    
-    with col_b:
-        verbrauch_h = 55.0 # Geschätzter V8 Verbrauch bei Gleitfahrt
-        zeit = dist / speed
-        benötigt = zeit * verbrauch_h
-        st.metric("Spritbedarf", f"{benötigt:.1f} L", delta=f"{tank_inhalt - benötigt:.1f} L Rest")
-        st.metric("Kosten (bei 2.15 CHF/L)", f"CHF {benötigt * 2.15:.2f}")
+with tab1:
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("Fahrt-Kalkulation")
+        distanz = st.number_input("Distanz (nm)", value=15.0)
+        speed = st.slider("Speed (kn)", 5, 45, 22)
+    with c2:
+        sprit_preis = 2.15
+        verbrauch_h = 55.0
+        zeit = distanz / speed
+        liter = zeit * verbrauch_h
+        st.metric("Spritbedarf", f"{liter:.1f} Liter")
+        st.metric("Kosten", f"CHF {liter * sprit_preis:.2f}")
 
-with tab_kosten:
-    st.subheader("Kostenübersicht Truelove")
-    k1, k2 = st.columns(2)
-    with k1:
-        v = st.number_input("Versicherung/Jahr", value=1150)
-        s = st.number_input("Steuer (Kanton)/Jahr", value=380)
-        w = st.number_input("Winterlager & Service", value=2400)
-    with k2:
-        total = v + s + w
-        st.metric("Gesamt Fixkosten", f"CHF {total:,.2f}")
-        st.info(f"Rückstellung monatlich: CHF {total/12:.2f}")
+with tab2:
+    st.subheader("Finanzen")
+    v = st.number_input("Versicherung/Jahr (CHF)", value=1100)
+    s = st.number_input("Steuern (CHF)", value=350)
+    w = st.number_input("Winterlager (CHF)", value=2200)
+    total = v + s + w
+    st.metric("Total Fixkosten", f"CHF {total:,.2f}")
+    st.metric("Monatliche Sparrate", f"CHF {total/12:.2f}")
 
-with tab_log:
-    st.subheader("Digitales Logbuch")
-    st.text_input("Törn-Bezeichnung (z.B. Ausflug nach Brunnen)")
-    st.text_area("Besatzung & Wetternotizen")
-    if st.button("Törn im Logbuch speichern"):
-        st.success("Daten wurden sicher auf dem Server abgelegt.")
+with tab3:
+    st.subheader("Wartungs-Check")
+    st.info("Nächster Service: In 45 Betriebsstunden fällig.")
+    st.checkbox("Motoröl-Stand okay")
+    st.checkbox("Batterien geladen")
+    st.checkbox("Kühlwasser-Check")
+    st.button("Törn im Logbuch speichern")
 
-# --- FOOTER ---
 st.write("---")
-st.caption("Truelove Platinum Edition | Created for Crownline Owners")
+st.caption(f"Truelove Cloud v3.0 | {datetime.now().year} | Design: Ocean-Blue")
