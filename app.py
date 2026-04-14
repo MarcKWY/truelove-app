@@ -30,27 +30,23 @@ st.markdown("""
         font-weight: 200;
     }
 
-    .nav-overlay-photo {
+    /* KORREKTUR: Der Rahmen umschliesst jetzt das Menü-Element direkt */
+    div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85);
-        padding: 15px;
+        padding: 15px 25px;
         border-radius: 15px;
         border: 2px solid #D4AF37;
         backdrop-filter: blur(10px);
-        position: relative;
         margin-top: 20px;
-        z-index: 999;
-        width: 90%;
-        margin-left: auto;
-        margin-right: auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        
-        /* SCHRIFT AUF BLAUEM HINTERGRUND IN SILBER */
-        color: #C0C0C0 !important;
+        display: flex;
+        justify-content: center;
     }
-    
-    /* Stellt sicher, dass auch die Radio-Button Texte in Silber erscheinen */
+
+    /* Schriftfarbe Silber für die Menüpunkte */
     div[data-testid="stRadio"] label {
         color: #C0C0C0 !important;
+        font-weight: 500;
     }
 
     .card {
@@ -71,8 +67,6 @@ st.markdown("""
     
     h2, h3, b { color: #D4AF37 !important; }
     .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
-    
-    div[data-testid="stHorizontalBlock"] { justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -88,21 +82,17 @@ st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_h
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION
-st.markdown("<div class='nav-overlay-photo'>", unsafe_allow_html=True)
+# NAVIGATION (Der Rahmen wird nun direkt vom Radio-Widget generiert)
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
                 key="nav_photo_overlay",
                 horizontal=True,
                 label_visibility="collapsed")
-st.markdown("</div>", unsafe_allow_html=True)
 
 # --- BEREICHE ---
-
 if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⛽ Tank-Management")
-    
     if os.path.exists("tanken.jpg"): 
         st.image("tanken.jpg", width=300)
     
@@ -128,22 +118,16 @@ if menu == "⛽ Tanken":
 elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⚙️ Vollständige Motordaten")
-    
     if os.path.exists("motor.jpg"): 
         st.image("motor.jpg", width=300)
 
     st.markdown("""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
-    <b>Typ:</b> V8 Big Block, 2 Ventile pro Zylinder<br>
     <b>Hubraum:</b> 8.1 Liter (496 cu in)<br>
-    <b>Bohrung x Hub:</b> 108 mm x 111 mm<br>
-    <b>Verdichtung:</b> 9.1:1<br>
-    <b>Einspritzung:</b> Multi-Port EFI (PCM 555)<br>
     <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
     <b>Ölkapazität:</b> ca. 8.5 Liter SAE 25W-40 Synthetic Blend<br>
-    <b>Kühlsystem:</b> Zweikreiskühlung (Closed Cooling)<br>
-    <b>Antrieb:</b> Bravo One X / Three X
+    <b>Kühlsystem:</b> Zweikreiskühlung (Closed Cooling)
     </div>""", unsafe_allow_html=True)
     
     st.write("### 🔧 Service Log")
@@ -157,7 +141,7 @@ elif menu == "⚙️ Motor & Service":
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💰 Finanzen")
-    # ... Finanzen Logik ...
+    # Hier folgen deine Finanz-Berechnungen
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v23.9")
+st.caption("Truelove Bridge v24.0")
