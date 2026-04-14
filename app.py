@@ -3,35 +3,49 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- NAUTICAL V20.2 MASTER ---
+# --- NAUTICAL V20.3 MASTER ---
 st.set_page_config(page_title="Truelove Skipper", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #F0F4F8; color: #001F3F; }
-    div[data-testid="stMetric"] {
-        background-color: #FFFFFF !important;
-        border-left: 5px solid #D4AF37 !important;
-        border-radius: 10px !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+    /* Hintergrund mit nautischer Textur (dezente dunkle Wellen/Seekarte) */
+    .stApp { 
+        background: linear-gradient(rgba(240, 244, 248, 0.8), rgba(240, 244, 248, 0.8)), 
+                    url("https://toptal.com");
+        background-attachment: fixed;
     }
+    
+    /* Inhalts-Boxen mit Glas-Effekt für nautischen Look & Lesbarkeit */
+    div[data-testid="stMetric"], .stTabs, div[data-testid="stExpander"], .stTable, .stDataFrame {
+        background-color: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(5px);
+        border-radius: 12px !important;
+        border: 1px solid rgba(0, 31, 63, 0.1) !important;
+    }
+
+    div[data-testid="stMetric"] {
+        border-left: 6px solid #D4AF37 !important;
+    }
+    
     .motor-card {
-        background-color: #001F3F;
+        background-color: rgba(0, 31, 63, 0.9);
         padding: 20px;
         border-radius: 12px;
         border: 2px solid #D4AF37;
         color: white;
     }
     .motor-card b { color: #D4AF37; }
+    
     .nav-box { 
-        background: #001F3F; color: white !important; padding: 15px; 
+        background: rgba(0, 31, 63, 0.95); color: white !important; padding: 15px; 
         border-radius: 12px; text-align: center; border: 2px solid #D4AF37;
     }
     .gold-box { 
-        background: #D4AF37; color: #001F3F !important; padding: 15px; 
+        background: rgba(212, 175, 55, 0.95); color: #001F3F !important; padding: 15px; 
         border-radius: 12px; text-align: center; border: 2px solid #001F3F; font-weight: bold;
     }
-    h1, h2, h3 { color: #001F3F !important; font-family: 'Georgia', serif; }
+    
+    h1, h2, h3 { color: #001F3F !important; font-family: 'Georgia', serif; text-shadow: 1px 1px 2px rgba(255,255,255,0.8); }
     </style>
     """, unsafe_allow_html=True)
 
@@ -39,7 +53,7 @@ if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'service_kosten' not in st.session_state: st.session_state.service_kosten = []
 
 # --- HEADER ---
-col_logo, col_title = st.columns([1, 4])
+col_logo, col_title = st.columns()
 with col_logo:
     for ext in ["png", "jpg", "jpeg", "PNG"]:
         if os.path.exists(f"logo.{ext}"):
@@ -57,15 +71,15 @@ with tab1:
     c_in, c_res = st.columns([1, 1.2])
     with c_in:
         with st.container(border=True):
-            t_dat = st.date_input("Datum", datetime.now(), key="t_d_22")
-            t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_l_22")
-            t_pr = st.number_input("CHF/L", value=2.15, key="t_p_22")
-            t_w = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="t_w_22")
-            if st.button("Sichern ✅", use_container_width=True, key="s_t_22"):
+            t_dat = st.date_input("Datum", datetime.now(), key="t_d_23")
+            t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_l_23")
+            t_pr = st.number_input("CHF/L", value=2.15, key="t_p_23")
+            t_w = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="t_w_23")
+            if st.button("Sichern ✅", use_container_width=True, key="s_t_23"):
                 if t_lit > 0:
                     st.session_state.tank_daten.append({"Datum": t_dat.strftime("%d.%m"), "Liter": t_lit, "CHF": round(t_lit * t_pr, 2), "Wer": t_w})
                     st.rerun()
-            if st.button("Löschen 🗑️", use_container_width=True, key="d_t_22"):
+            if st.button("Löschen 🗑️", use_container_width=True, key="d_t_23"):
                 if st.session_state.tank_daten: st.session_state.tank_daten.pop(); st.rerun()
     with c_res:
         if st.session_state.tank_daten:
@@ -77,12 +91,10 @@ with tab1:
 with tab2:
     col_m1, col_m2 = st.columns(2)
     with col_m1:
-        # HIER SIND DIE KOMPLETTEN DATEN WIEDER
         st.markdown("""<div class="motor-card">
         <h3>⚙️ Mercruiser 496 MAG HO</h3>
         • <b>Leistung:</b> 317 kW / 431 PS HO<br>
         • <b>Hubraum:</b> 8.2L Big Block (496 cid)<br>
-        • <b>Zylinder:</b> V8<br>
         • <b>Kühlung:</b> Zweikreissystem (Closed)<br>
         • <b>WOT:</b> 4600 - 5000 RPM<br>
         • <b>Einspritzung:</b> Multi-Point (MPI)<br>
@@ -93,12 +105,12 @@ with tab2:
     with col_m2:
         with st.container(border=True):
             st.write("**🔧 Service-Eintrag**")
-            s_arbeit = st.text_input("Arbeit", key="s_a_22")
-            s_chf = st.number_input("Kosten (CHF)", min_value=0.0, key="s_c_22")
-            if st.button("Speichern", key="s_s_22"):
+            s_arbeit = st.text_input("Arbeit", key="s_a_23")
+            s_chf = st.number_input("Kosten (CHF)", min_value=0.0, key="s_c_23")
+            if st.button("Speichern", key="s_s_23"):
                 st.session_state.service_kosten.append({"Datum": datetime.now().strftime("%d.%m"), "Arbeit": s_arbeit, "CHF": s_chf})
                 st.rerun()
-            if st.button("Löschen", key="s_l_22"):
+            if st.button("Löschen", key="s_l_23"):
                 if st.session_state.service_kosten: st.session_state.service_kosten.pop(); st.rerun()
         if st.session_state.service_kosten:
             st.table(pd.DataFrame(st.session_state.service_kosten))
@@ -106,10 +118,10 @@ with tab2:
 with tab3:
     c_k1, c_k2 = st.columns(2)
     with c_k1:
-        k_vers = st.number_input("Versicherung 🛡️", value=1150.0, key="k_v_22")
-        k_pl = st.number_input("Bootsplatz ⚓", value=1500.0, key="k_p_22")
-        k_wi = st.number_input("Winterlager ❄️", value=2200.0, key="k_w_22")
-        k_st = st.number_input("Steuern 📜", value=350.0, key="k_s_22")
+        k_vers = st.number_input("Versicherung 🛡️", value=1150.0, key="k_v_23")
+        k_pl = st.number_input("Bootsplatz ⚓", value=1500.0, key="k_p_23")
+        k_wi = st.number_input("Winterlager ❄️", value=2200.0, key="k_w_23")
+        k_st = st.number_input("Steuern 📜", value=350.0, key="k_s_23")
     with c_k2:
         s_sum = sum(i['CHF'] for i in st.session_state.tank_daten)
         m_sum = sum(i['CHF'] for i in st.session_state.service_kosten)
@@ -119,4 +131,4 @@ with tab3:
         st.markdown(f"<div class='gold-box'><small>Gesamtkosten inkl. Benzin</small><br><h2>CHF {fix + m_sum + s_sum:,.2f}</h2></div>", unsafe_allow_html=True)
 
 st.write("---")
-st.caption("Truelove Skipper v20.2 | Master Nautical Build")
+st.caption("Truelove Skipper v20.3 | Deep Sea Master Build")
