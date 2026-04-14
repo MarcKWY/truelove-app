@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP ---
+# --- MASTER SETUP ---
 st.set_page_config(page_title="Truelove Dashboard", layout="wide")
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Speicher
+# Daten-Speicher (Session)
 if 'tank_daten' not in st.session_state: st.session_state.tank_daten = []
 if 'zubehoer' not in st.session_state: st.session_state.zubehoer = []
 
@@ -29,12 +29,13 @@ with col_r:
     st.title("⚓ TRUELOVE Skipper Zentrale")
     st.write(f"Crownline 286 SC | **V8 496 MAG HO (317 kW)**")
 
-# --- REITER ---
+# --- REITER-STRUKTUR ---
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["⛽ Tanken", "⚙️ Motor & Rechnungen", "🔧 Service & Zubehör", "💰 Kosten", "📖 Logbuch"])
 
+# TAB 1: TANKEN
 with tab1:
     st.subheader("⛽ Tank-Management")
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     
     col_in, col_res = st.columns(2)
     with col_in:
@@ -54,13 +55,13 @@ with tab1:
                     if st.session_state.tank_daten:
                         st.session_state.tank_daten.pop()
                         st.rerun()
-    
     with col_res:
         if st.session_state.tank_daten:
             df = pd.DataFrame(st.session_state.tank_daten)
-            st.metric("Total Benzin", f"CHF {df['Total'].sum():,.2f}")
+            st.metric("Total Benzin Saison", f"CHF {df['Total'].sum():,.2f}")
             st.table(df)
 
+# TAB 2: MOTOR & RECHNUNGEN
 with tab2:
     st.subheader("⚙️ Motor-Daten & Rechnungs-Upload")
     col_m1, col_m2 = st.columns(2)
@@ -72,44 +73,54 @@ with tab2:
             <li><b>Leistung:</b> 317 kW / 431 PS</li>
             <li><b>Hubraum:</b> 8.2 Liter</li>
             <li><b>Kühlung:</b> Zweikreissystem</li>
-            <li><b>Ölkapazität:</b> 8.5 Liter</li>
             <li><b>WOT:</b> 4600 - 5000 RPM</li>
+            <li><b>Ölkapazität:</b> 8.5 Liter</li>
         </ul>
         </div>
         """, unsafe_allow_html=True)
         if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
-        
     with col_m2:
         st.write("### 📂 Service-Rechnungen")
-        uploaded_file = st.file_uploader("Rechnung als Foto hochladen", type=['jpg', 'jpeg', 'png'])
-        if uploaded_file is not None:
-            st.image(uploaded_file, caption="Hochgeladene Rechnung", use_container_width=True)
-            st.success("Rechnung für diese Sitzung geladen!")
+        uploaded_file = st.file_uploader("Rechnung/Foto hochladen", type=['jpg', 'jpeg', 'png'])
+        if uploaded_file: st.image(uploaded_file, caption="Aktuelle Rechnung", use_container_width=True)
 
+# TAB 3: SERVICE & ZUBEHÖR
 with tab3:
-    st.subheader("🔧 Service-Einträge")
-    s_datum = st.date_input("Service am", datetime.now())
-    s_was = st.text_area("Arbeiten")
-    if st.button("Service speichern"): st.success("Eintrag gespeichert!")
+    st.subheader("🔧 Service & Zubehör")
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        st.write("### Service-Eintrag")
+        s_text = st.text_area("Arbeiten")
+        if st.button("Service speichern"): st.success("Eintrag gemerkt")
+    with col_s2:
+        st.write("### Zubehör")
+        zub_n = st.text_input("Teil")
+        zub_p = st.number_input("Preis CHF", min_value=0.0)
+        if st.button("Zubehör speichern"):
+            st.session_state.zubehoer.append({"Teil": zub_n, "Preis": zub_p})
+            st.rerun()
 
+# TAB 4: KOSTEN
 with tab4:
-    st.subheader("💰 Kosten")
+    st.subheader("💰 Kostenübersicht")
     col_k1, col_k2 = st.columns(2)
     with col_k1:
         st.image("https://wikimedia.org", width=50)
         k_axa = st.number_input("AXA Versicherung", value=1150.0)
         k_platz = st.number_input("Bootsplatz & Winter", value=3700.0)
-        k_steuer = st.number_input("Steuern", value=350.0)
+        k_steuer = st.number_input("Steuer", value=350.0)
     with col_k2:
         sprit_sum = sum(i['Total'] for i in st.session_state.tank_daten)
-        total = k_axa + k_platz + k_steuer + sprit_sum
-        st.metric("Fixkosten", f"CHF {k_axa + k_platz + k_steuer:,.2f}")
-        st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN</h3><h1>CHF {total:,.2f}</h1></div>", unsafe_allow_html=True)
+        zub_sum = sum(i['Preis'] for i in st.session_state.zubehoer)
+        fix = k_axa + k_platz + k_steuer
+        st.metric("Fixkosten", f"CHF {fix:,.2f}")
+        st.markdown(f"<div class='total-box'><h3>GESAMTKOSTEN SAISON</h3><h1>CHF {fix + sprit_sum + zub_sum:,.2f}</h1></div>", unsafe_allow_html=True)
 
+# TAB 5: LOGBUCH
 with tab5:
-    st.header("📖 Logbuch")
+    st.header("📖 Fahrtenbuch")
     if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", width=400)
-    st.text_input("Ziel")
+    st.text_input("Törn-Ziel")
 
 st.write("---")
-st.caption("Truelove v17.0 | Marc & Fabienne Edition")
+st.caption("Truelove Fleet v18.0 | Stable Master Build")
