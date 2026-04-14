@@ -8,6 +8,12 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
+    /* ENTFERNT DAS BANNER / HEADER / MENU / FOOTER */
+    #MainMenu {visibility: hidden;} 
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    [data-testid="stDecoration"] {display: none;} /* Die farbige Linie oben */
+    
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
     .truelove-title {
@@ -30,19 +36,15 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* Das Menü, das DIREKT ÜBER dem Bild schwebt */
     .nav-overlay-photo {
-        background-color: rgba(5, 15, 30, 0.85); /* Halbdurchsichtig */
+        background-color: rgba(5, 15, 30, 0.85); 
         padding: 15px;
         border-radius: 15px;
         border: 2px solid #D4AF37;
         backdrop-filter: blur(10px);
-        
-        /* Dieser Teil schiebt das Menü ÜBER das Bild */
         position: relative;
         margin-top: -110px; 
         z-index: 999;
-        
         width: 90%;
         margin-left: auto;
         margin-right: auto;
@@ -54,7 +56,7 @@ st.markdown("""
         padding: 25px;
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 40px; /* Platz zum schwebenden Menü */
+        margin-top: 40px;
     }
     
     .spec-card { 
@@ -67,7 +69,6 @@ st.markdown("""
     h2, h3, b { color: #D4AF37 !important; }
     .stMetric { background-color: rgba(255,255,255,0.05) !important; border-radius: 12px !important; border: 1px solid #D4AF37 !important; }
     
-    /* Radio Buttons Styling */
     div[data-testid="stHorizontalBlock"] { justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
@@ -80,11 +81,11 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD (DIESES BILD WIRD ÜBERLAGERT)
+# HAUPTBILD
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# DIE STEUERUNG - JETZT DIREKT AUF DEM FOTO
+# NAVIGATION
 st.markdown("<div class='nav-overlay-photo'>", unsafe_allow_html=True)
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
@@ -93,10 +94,9 @@ menu = st.radio("BRIDGE CONTROL",
                 label_visibility="collapsed")
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.write("##") # Kleiner Puffer
+st.write("##")
 
-# --- BEREICHE ---
-
+# --- BEREICHE (LOGIK) ---
 if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⛽ Tank-Management")
@@ -156,4 +156,4 @@ elif menu == "💰 Finanzen":
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("---")
-st.caption("Truelove Bridge Overlay v23.6")
+st.caption("Truelove Bridge Overlay v23.6 - Clean UI")
