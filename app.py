@@ -84,7 +84,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Speicher initialisieren (Lokal als CSV für die Persistenz)
+# --- DATEI-OPERATIONEN FÜR SPEICHERUNG ---
 TANK_FILE = "tank_daten.csv"
 SERVICE_FILE = "service_daten.csv"
 
@@ -96,8 +96,11 @@ def load_data(file):
 def save_data(data, file):
     pd.DataFrame(data).to_csv(file, index=False)
 
-if 'tank_daten' not in st.session_state: st.session_state.tank_daten = load_data(TANK_FILE)
-if 'service_historie' not in st.session_state: st.session_state.service_historie = load_data(SERVICE_FILE)
+# Speicher initialisieren
+if 'tank_daten' not in st.session_state: 
+    st.session_state.tank_daten = load_data(TANK_FILE)
+if 'service_historie' not in st.session_state: 
+    st.session_state.service_historie = load_data(SERVICE_FILE)
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
@@ -156,6 +159,7 @@ elif menu == "⚙️ Motor & Service":
     st.markdown(f"<div class='card'><h3>⚙️ Service Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
     if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
     
+    # MOTORDATEN FEST HINTERLEGT
     st.markdown(f"""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 431 PS (317 kW) @ 4400-4800 RPM<br>
@@ -165,6 +169,7 @@ elif menu == "⚙️ Motor & Service":
     <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
     <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
     
+    st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
     
@@ -206,4 +211,4 @@ elif menu == "💰 Finanzen":
     st.info(f"⛽ Reine Benzinkosten {auswahl_jahr}: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption(f"Truelove Bridge v25.7 - Saison {auswahl_jahr}")
+st.caption(f"Truelove Bridge v25.8 - Persistente Saison {auswahl_jahr}")
