@@ -10,34 +10,42 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* 1. ICONS MASSIV VERGRÖSSERN */
+    /* ALLE BESCHRIFTUNGEN (Labels, Marc/Fabienne, etc.) WEISS UND GRÖSSER */
+    label, .stRadio label, div[data-testid="stMarkdownContainer"] p {
+        color: #FFFFFF !important;
+        font-size: 22px !important;
+        font-weight: 500 !important;
+    }
+
+    /* SPEZIELL FÜR DIE MENÜ-ICONS (Extrem groß wie gewünscht) */
     div[data-testid="stRadio"] label {
         font-size: 45px !important;
-        font-weight: bold !important;
-        color: #FFFFFF !important;
     }
-    
-    /* 2. ALLE BILDER MIT GOLDRAND */
+
+    /* EINGABEFELDER: Schrift im Feld bleibt schwarz für Lesbarkeit, Label darüber weiss */
+    input { color: #000000 !important; font-size: 18px !important; }
+
+    /* BILDER MIT GOLDRAND */
     img {
         border: 2px solid #D4AF37 !important;
         border-radius: 15px !important;
     }
 
-    /* 3. BUTTON FARBE ÄNDERN (Eintrag speichern / Speichern) */
+    /* BUTTON DESIGN */
     .stButton>button {
-        background-color: #8B6914 !important; /* Dunkelgold/Bronze */
+        background-color: #8B6914 !important;
         color: white !important;
         border: 1px solid #D4AF37 !important;
         border-radius: 10px !important;
-        font-weight: bold !important;
+        font-size: 20px !important;
     }
 
-    /* Bestehendes Design beibehalten */
+    /* Titel-Styling */
     .truelove-title {
         font-family: 'Georgia', serif;
         font-size: 58px;
         font-weight: bold;
-        color: #D4AF37;
+        color: #D4AF37 !important;
         text-align: center;
         margin-bottom: 0px;
     }
@@ -46,8 +54,8 @@ st.markdown("""
         font-size: 20px;
         text-align: center;
         margin-top: -10px;
-        letter-spacing: 3px;
     }
+
     div[data-testid="stRadio"] > div {
         background-color: rgba(5, 15, 30, 0.85);
         padding: 15px;
@@ -55,6 +63,7 @@ st.markdown("""
         border: 2px solid #D4AF37;
         margin-top: 10px;
     }
+
     .card {
         background-color: rgba(255, 255, 255, 0.05);
         padding: 25px;
@@ -62,8 +71,7 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
         margin-top: 20px;
     }
-    h2, h3, b { color: #D4AF37 !important; }
-    input { color: #000000 !important; }
+
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
@@ -76,11 +84,9 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION
 menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
 
 # --- BEREICHE ---
