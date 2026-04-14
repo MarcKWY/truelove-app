@@ -21,14 +21,15 @@ st.markdown("""
     input { color: #000000 !important; font-size: 18px !important; }
     img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
     
-    /* UPLOAD FENSTER: HELLGOLD HINTERGRUND / SCHWARZE SCHRIFT */
+    /* UPLOAD FENSTER: Dunkler Hintergrund mit Gold-Rahmen für bessere Sichtbarkeit */
     [data-testid="stFileUploadDropzone"] {
-        background-color: #D4AF37 !important;
-        border: 2px dashed #FFFFFF !important;
+        background-color: #0A1E3C !important;
+        border: 2px solid #D4AF37 !important;
+        border-radius: 15px !important;
     }
+    /* Upload-Text in weiss, damit er auf Blau gut lesbar ist */
     [data-testid="stFileUploadDropzone"] * {
-        color: #000000 !important;
-        font-weight: bold !important;
+        color: #FFFFFF !important;
     }
 
     .stButton>button {
@@ -38,10 +39,17 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
+    /* TITEL WIEDER GOLDIG UND GROSS */
     .truelove-title {
-        font-family: 'Georgia', serif; font-size: 58px; font-weight: bold;
-        color: #D4AF37 !important; text-align: center; margin-bottom: 0px;
+        font-family: 'Georgia', serif; 
+        font-size: 72px !important; /* Extra Gross */
+        font-weight: bold;
+        color: #D4AF37 !important; 
+        text-align: center; 
+        margin-bottom: 0px;
+        letter-spacing: 5px;
     }
+    
     .crownline-subtitle {
         font-family: 'Helvetica Neue', sans-serif; font-size: 20px; text-align: center; margin-top: -10px;
     }
@@ -129,6 +137,8 @@ elif menu == "⚙️ Motor & Service":
     st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
+    
+    # Upload Balken (farblich angepasst)
     s_foto = st.file_uploader("Rechnung hochladen", type=['png', 'jpg', 'jpeg'])
     
     c3, c4 = st.columns(2)
