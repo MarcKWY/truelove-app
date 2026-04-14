@@ -91,9 +91,8 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# SAISONFILTER (Hier wurde "Geschäftsjahr" in "Saison" geändert)
-aktuelles_jahr = datetime.now().year
-auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(aktuelles_jahr, aktuelles_jahr-5, -1), index=0)
+# SAISONFILTER: Start bei 2026 und Blick in die ZUKUNFT (bis 2035)
+auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2026, 2036), index=0)
 
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
@@ -120,7 +119,7 @@ if menu == "⛽ Tanken":
     if c1.button("Speichern ✅"):
         if t_lit > 0:
             st.session_state.tank_daten.append({
-                "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"), 
                 "Liter": f"{t_lit:.2f}", "CHF/L": f"{t_pr:.2f}",
                 "Total CHF": f"{(t_lit*t_pr):.2f}", "Wer": t_wer
             })
@@ -156,7 +155,7 @@ elif menu == "⚙️ Motor & Service":
     if c3.button("Eintrag speichern"):
         if s_arbeit:
             st.session_state.service_historie.append({
-                "Datum": datetime.now().strftime("%d.%m.%Y"), 
+                "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"), 
                 "Arbeit": s_arbeit, "CHF": f"{s_preis:.2f}"
             })
             st.rerun()
@@ -186,4 +185,4 @@ elif menu == "💰 Finanzen":
     st.info(f"⛽ Reine Benzinkosten {auswahl_jahr}: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption(f"Truelove Bridge v25.4 - Saisonübersicht {auswahl_jahr}")
+st.caption(f"Truelove Bridge v25.5 - Zukunftsplanung Saison {auswahl_jahr}")
