@@ -10,10 +10,10 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* TITEL: GOLD UND 55px */
+    /* TITEL: GOLD UND AUF 45px VERKLEINERT */
     .truelove-title {
         font-family: 'Georgia', serif !important;
-        font-size: 55px !important;
+        font-size: 45px !important;
         font-weight: bold !important;
         color: #D4AF37 !important;
         text-align: center !important;
@@ -25,11 +25,12 @@ st.markdown("""
     
     .crownline-subtitle {
         font-family: 'Helvetica Neue', sans-serif;
-        font-size: 18px;
+        font-size: 16px;
         text-align: center;
         margin-top: -5px;
         color: #FFFFFF;
         opacity: 0.8;
+        letter-spacing: 3px;
     }
 
     /* ALLGEMEINES STYLING */
@@ -91,7 +92,7 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# SAISONFILTER: Start bei 2026 und Blick in die ZUKUNFT (bis 2035)
+# SAISONFILTER
 auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2026, 2036), index=0)
 
 if os.path.exists("boot_gross.jpg"): 
@@ -185,4 +186,4 @@ elif menu == "💰 Finanzen":
     st.info(f"⛽ Reine Benzinkosten {auswahl_jahr}: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption(f"Truelove Bridge v25.5 - Zukunftsplanung Saison {auswahl_jahr}")
+st.caption(f"Truelove Bridge v25.6 - Saison {auswahl_jahr}")
