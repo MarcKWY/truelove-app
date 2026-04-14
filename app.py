@@ -30,7 +30,6 @@ st.markdown("""
         font-weight: 200;
     }
 
-    /* Das Menü sitzt jetzt direkt UNTER dem Bild (kein Streifen im Bild) */
     .nav-overlay-photo {
         background-color: rgba(5, 15, 30, 0.85);
         padding: 15px;
@@ -38,7 +37,7 @@ st.markdown("""
         border: 2px solid #D4AF37;
         backdrop-filter: blur(10px);
         position: relative;
-        margin-top: 20px; /* Positiver Abstand statt negativem Überlappen */
+        margin-top: 20px;
         z-index: 999;
         width: 90%;
         margin-left: auto;
@@ -77,11 +76,11 @@ if 'service_historie' not in st.session_state: st.session_state.service_historie
 st.markdown("<h1 class='truelove-title'>TRUELOVE</h1>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# HAUPTBILD
+# HAUPTBILD (BLEIBT GROSS)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
-# NAVIGATION (Jetzt sauber unter dem Bild)
+# NAVIGATION
 st.markdown("<div class='nav-overlay-photo'>", unsafe_allow_html=True)
 menu = st.radio("BRIDGE CONTROL", 
                 ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], 
@@ -95,7 +94,10 @@ st.markdown("</div>", unsafe_allow_html=True)
 if menu == "⛽ Tanken":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⛽ Tank-Management")
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=400)
+    
+    # BILD VERKLEINERT AUF 300px
+    if os.path.exists("tanken.jpg"): 
+        st.image("tanken.jpg", width=300)
     
     t_lit = st.number_input("Liter", min_value=0.0, step=10.0, key="t_lit")
     t_pr = st.number_input("CHF / L", value=2.15)
@@ -119,6 +121,11 @@ if menu == "⛽ Tanken":
 elif menu == "⚙️ Motor & Service":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("⚙️ Vollständige Motordaten")
+    
+    # BILD VERKLEINERT AUF 300px
+    if os.path.exists("motor.jpg"): 
+        st.image("motor.jpg", width=300)
+
     st.markdown("""<div class='spec-card'>
     <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
     <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
@@ -133,8 +140,6 @@ elif menu == "⚙️ Motor & Service":
     <b>Antrieb:</b> Bravo One X / Three X
     </div>""", unsafe_allow_html=True)
     
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
-    
     st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0)
@@ -145,7 +150,8 @@ elif menu == "⚙️ Motor & Service":
 
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    # ... (Rest deines ursprünglichen Finanz-Codes bleibt gleich)
+    st.subheader("💰 Finanzen")
+    # ... (Rest deines ursprünglichen Finanz-Codes)
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("Truelove Bridge v23.7")
+st.caption("Truelove Bridge v23.8")
