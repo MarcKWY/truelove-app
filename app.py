@@ -41,12 +41,16 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS VERBINDUNG ---
+# --- GOOGLE SHEETS VERBINDUNG (DIREKT) ---
+# Hier steht dein Link nun fest im Code
+TABLE_URL = "https://google.com"
+
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        df = conn.read(worksheet=worksheet)
+        # Wir sagen der App hier direkt, welches Sheet sie öffnen soll
+        df = conn.read(spreadsheet=TABLE_URL, worksheet=worksheet)
         return df.dropna(how="all")
     except:
         if worksheet == "tanken":
@@ -54,7 +58,8 @@ def load_data(worksheet):
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
-    conn.update(worksheet=worksheet, data=df)
+    # Auch beim Speichern nutzen wir die URL direkt
+    conn.update(spreadsheet=TABLE_URL, worksheet=worksheet, data=df)
     st.cache_data.clear()
 
 df_tanken = load_data("tanken")
@@ -93,10 +98,9 @@ if menu == "⛽ Tanken":
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
     if not tank_jahr.empty:
         st.table(tank_jahr)
-        # Gezieltes Löschen
         with st.expander("🗑️ Eintrag löschen"):
-            del_idx = st.number_input("Zeilen-Nummer (Index) zum Löschen", min_value=0, max_value=len(df_tanken)-1, step=1)
-            if st.button("Diesen Eintrag permanent entfernen"):
+            del_idx = st.number_input("Zeilen-Nummer zum Löschen", min_value=0, max_value=len(df_tanken)-1, step=1)
+            if st.button("Diesen Eintrag entfernen"):
                 df_tanken = df_tanken.drop(df_tanken.index[del_idx])
                 save_data(df_tanken, "tanken")
                 st.rerun()
