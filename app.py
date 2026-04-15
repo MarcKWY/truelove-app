@@ -8,8 +8,7 @@ from datetime import datetime
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 # Deine Web-App URL
-SCRIPT_URL = "
-https://script.google.com/macros/s/AKfycbwEhJTco_d0sr8csXaXzq5R9kdSgRoJLJlO5g2NGoO-H2oWFxsOCiatkgsDVcjbmlAT/exec"
+SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEhJTco_d0sr8csXaXzq5R9kdSgRoJLJlO5g2NGoO-H2oWFxsOCiatkgsDVcjbmlAT/exec"
 
 st.markdown("""
     <style>
