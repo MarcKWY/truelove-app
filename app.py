@@ -41,21 +41,23 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- GOOGLE SHEETS VERBINDUNG ---
-TABLE_URL = "https://google.com"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        return conn.read(spreadsheet=TABLE_URL, worksheet=worksheet).dropna(how="all")
-    except:
+        # Er nimmt die URL jetzt automatisch aus den Secrets
+        return conn.read(worksheet=worksheet).dropna(how="all")
+    except Exception as e:
         if worksheet == "tanken":
             return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
-    conn.update(spreadsheet=TABLE_URL, worksheet=worksheet, data=df)
+    # Er nimmt die URL jetzt automatisch aus den Secrets
+    conn.update(worksheet=worksheet, data=df)
     st.cache_data.clear()
 
+# Daten initial laden
 df_tanken = load_data("tanken")
 df_service = load_data("service")
 
@@ -86,17 +88,12 @@ if menu == "⛽ Tanken":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Liter": t_lit, "CHF/L": t_pr, "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer}])
         df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
         save_data(df_tanken, "tanken")
+        st.success("Gespeichert!")
         st.rerun()
 
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
     if not tank_jahr.empty:
         st.table(tank_jahr)
-        with st.expander("🗑️ Eintrag löschen"):
-            del_idx = st.number_input("Index", min_value=0, max_value=max(0, len(df_tanken)-1), step=1)
-            if st.button("Löschen"):
-                df_tanken = df_tanken.drop(df_tanken.index[del_idx])
-                save_data(df_tanken, "tanken")
-                st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "⚙️ Motor & Service":
@@ -109,6 +106,7 @@ elif menu == "⚙️ Motor & Service":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_preis}])
         df_service = pd.concat([df_service, new_row], ignore_index=True)
         save_data(df_service, "service")
+        st.success("Service gespeichert!")
         st.rerun()
     
     service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
