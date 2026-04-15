@@ -42,7 +42,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- GOOGLE SHEETS VERBINDUNG (FESTE URL) ---
-TABLE_URL = ''https://docs.google.com/spreadsheets/d/17cBCWZz_oFuPHVjbRkxGFLzkRVthK_2_cqFZY6vQ9Bo/edit?gid=0#gid=0''
+TABLE_URL = "https://docs.google.com/spreadsheets/d/17cBCWZz_oFuPHVjbRkxGFLzkRVthK_2_cqFZY6vQ9Bo/edit"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
