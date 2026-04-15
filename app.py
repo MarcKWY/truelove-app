@@ -40,30 +40,30 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS VERBINDUNG ---
-SHEET_ID = "17cBCWZz_oFuPHVjbRkxGFLzkRVthK_2_cqFZY6vQ9Bo"
+# --- GOOGLE SHEETS VERBINDUNG (VOLLER LINK) ---
+# Hier nutzen wir wieder den vollen Link, da die ID allein den 404-Fehler verursacht hat
+FULL_URL = "https://google.com"
+
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        return conn.read(spreadsheet=SHEET_ID, worksheet=worksheet).dropna(how="all")
+        # Laden mit der vollen URL
+        return conn.read(spreadsheet=FULL_URL, worksheet=worksheet).dropna(how="all")
     except Exception as e:
-        st.error(f"Fehler beim Laden von {worksheet}: {e}")
         if worksheet == "tanken":
             return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
     try:
-        # Hier probieren wir das Update
-        conn.update(spreadsheet=SHEET_ID, worksheet=worksheet, data=df)
+        # Speichern mit der vollen URL
+        conn.update(spreadsheet=FULL_URL, worksheet=worksheet, data=df)
         st.cache_data.clear()
-        st.success(f"Erfolgreich in {worksheet} gespeichert!")
+        st.success(f"Eintrag in '{worksheet}' wurde im Google Sheet gespeichert!")
         return True
     except Exception as e:
-        # Falls es knallt, zeigen wir den Fehler GROSS an
-        st.error(f"🚨 SPEICHERFEHLER in {worksheet}:")
-        st.code(str(e))
+        st.error(f"🚨 Fehler beim Speichern: {e}")
         return False
 
 # Daten laden
@@ -94,8 +94,7 @@ if menu == "⛽ Tanken":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Liter": t_lit, "CHF/L": t_pr, "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer}])
         neuer_df = pd.concat([df_tanken, new_row], ignore_index=True)
         if save_data(neuer_df, "tanken"):
-             st.info("App wird in 2 Sek. aktualisiert...")
-             # st.rerun() entfernt, damit du den Fehler lesen kannst!
+             st.info("Daten wurden synchronisiert. Bitte Seite neu laden oder Tab wechseln.")
 
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
     if not tank_jahr.empty:
@@ -112,7 +111,7 @@ elif menu == "⚙️ Motor & Service":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_preis}])
         neuer_df_s = pd.concat([df_service, new_row], ignore_index=True)
         if save_data(neuer_df_s, "service"):
-            st.info("App wird aktualisiert...")
+            st.info("Service wurde synchronisiert.")
     
     service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
     if not service_jahr.empty:
@@ -121,7 +120,11 @@ elif menu == "⚙️ Motor & Service":
 
 elif menu == "💰 Finanzen":
     st.markdown(f"<div class='card'><h3>💰 Finanzen Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
+    # Einfache Berechnung basierend auf den geladenen Daten
     sprit_sum = pd.to_numeric(df_tanken["Total CHF"], errors='coerce').sum() if not df_tanken.empty else 0
     serv_sum = pd.to_numeric(df_service["CHF"], errors='coerce').sum() if not df_service.empty else 0
-    st.metric("TOTAL INKL. BENZIN", f"CHF {(3700 + serv_sum + sprit_sum):,.2f}")
+    
+    col1, col2 = st.columns(2)
+    col1.metric("BENZIN TOTAL", f"CHF {sprit_sum:,.2f}")
+    col2.metric("SERVICE TOTAL", f"CHF {serv_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
