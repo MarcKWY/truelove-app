@@ -41,21 +41,27 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- GOOGLE SHEETS VERBINDUNG ---
+# Wir nutzen hier NUR die ID, das ist am stabilsten
+SHEET_ID = "17cBCWZz_oFuPHVjbRkxGFLzkRVthK_2_cqFZY6vQ9Bo"
+
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        # Er nimmt die URL jetzt automatisch aus den Secrets
-        return conn.read(worksheet=worksheet).dropna(how="all")
-    except Exception as e:
+        # Wir rufen die Daten über die ID ab
+        return conn.read(spreadsheet=SHEET_ID, worksheet=worksheet).dropna(how="all")
+    except Exception:
         if worksheet == "tanken":
             return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
-    # Er nimmt die URL jetzt automatisch aus den Secrets
-    conn.update(worksheet=worksheet, data=df)
-    st.cache_data.clear()
+    try:
+        # Wir speichern die Daten über die ID
+        conn.update(spreadsheet=SHEET_ID, worksheet=worksheet, data=df)
+        st.cache_data.clear()
+    except Exception as e:
+        st.error(f"Fehler beim Speichern: {e}")
 
 # Daten initial laden
 df_tanken = load_data("tanken")
@@ -88,7 +94,6 @@ if menu == "⛽ Tanken":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Liter": t_lit, "CHF/L": t_pr, "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer}])
         df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
         save_data(df_tanken, "tanken")
-        st.success("Gespeichert!")
         st.rerun()
 
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
@@ -106,7 +111,6 @@ elif menu == "⚙️ Motor & Service":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_preis}])
         df_service = pd.concat([df_service, new_row], ignore_index=True)
         save_data(df_service, "service")
-        st.success("Service gespeichert!")
         st.rerun()
     
     service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
