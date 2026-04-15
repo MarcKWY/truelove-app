@@ -29,14 +29,27 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- TURBO-LADE-FUNKTION (CACHE) ---
-@st.cache_data(ttl=60) # Daten werden 60 Sek. lokal behalten für Highspeed
+# --- DATUM-REINIGER ---
+def clean_date(val):
+    try:
+        # Versucht das ISO Format (2026-04-14...) zu kürzen und umzuwandeln
+        if isinstance(val, str) and 'T' in val:
+            return datetime.strptime(val.split('T')[0], '%Y-%m-%d').strftime('%d.%m.%Y')
+        return val
+    except:
+        return val
+
+# --- LADE-FUNKTION ---
+@st.cache_data(ttl=60)
 def fetch_data(sheet_name):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet_name}", timeout=10)
         data = r.json()
         if len(data) > 1:
-            df = pd.DataFrame(data[1:], columns=data[0])
+            df = pd.DataFrame(data[1:], columns=data)
+            # DATUM FIX: Spalte 'Datum' wird hier bereinigt
+            if 'Datum' in df.columns:
+                df['Datum'] = df['Datum'].apply(clean_date)
             return df
         return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"] if sheet_name=="tanken" else ["Datum", "Arbeit", "CHF"])
     except:
@@ -45,7 +58,7 @@ def fetch_data(sheet_name):
 def send_action(payload):
     try:
         requests.post(SCRIPT_URL, json=payload, timeout=10)
-        st.cache_data.clear() # Cache leeren für sofortige Aktualisierung
+        st.cache_data.clear()
         return True
     except:
         return False
@@ -69,8 +82,7 @@ if menu == "⛽ Tanken":
     wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
     if st.button("Speichern ✅"):
-        # Datum wird als Text fixiert 'DD.MM.YYYY
-        new_row = ["'" + datetime.now().strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
+        new_row = [datetime.now().strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
         if send_action({"sheet": "tanken", "method": "append", "values": new_row}):
             st.rerun()
 
@@ -95,7 +107,7 @@ elif menu == "⚙️ Motor & Service":
     preis = st.number_input("Kosten CHF", min_value=0.0, step=0.1)
     
     if st.button("Service speichern"):
-        send_action({"sheet": "service", "method": "append", "values": ["'" + datetime.now().strftime("%d.%m.%Y"), arbeit, preis]})
+        send_action({"sheet": "service", "method": "append", "values": [datetime.now().strftime("%d.%m.%Y"), arbeit, preis]})
         st.rerun()
     
     df_s = fetch_data("service")
@@ -116,7 +128,7 @@ elif menu == "💰 Finanzen":
     df_s = fetch_data("service")
     sprit = pd.to_numeric(df_t.iloc[:, 3], errors='coerce').sum() if not df_t.empty else 0
     serv = pd.to_numeric(df_s.iloc[:, 2], errors='coerce').sum() if not df_s.empty else 0
-    fix = 2200 + 1500 + 350 + 1150 # Winter, Platz, Steuern, Versicherung
+    fix = 2200 + 1500 + 350 + 1150
     
     col1, col2 = st.columns(2)
     col1.metric("OHNE BENZIN", f"CHF {(fix + serv):,.2f}")
