@@ -41,29 +41,32 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- GOOGLE SHEETS VERBINDUNG ---
-# Wir nutzen hier NUR die ID, das ist am stabilsten
 SHEET_ID = "17cBCWZz_oFuPHVjbRkxGFLzkRVthK_2_cqFZY6vQ9Bo"
-
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        # Wir rufen die Daten über die ID ab
         return conn.read(spreadsheet=SHEET_ID, worksheet=worksheet).dropna(how="all")
-    except Exception:
+    except Exception as e:
+        st.error(f"Fehler beim Laden von {worksheet}: {e}")
         if worksheet == "tanken":
             return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
     try:
-        # Wir speichern die Daten über die ID
+        # Hier probieren wir das Update
         conn.update(spreadsheet=SHEET_ID, worksheet=worksheet, data=df)
         st.cache_data.clear()
+        st.success(f"Erfolgreich in {worksheet} gespeichert!")
+        return True
     except Exception as e:
-        st.error(f"Fehler beim Speichern: {e}")
+        # Falls es knallt, zeigen wir den Fehler GROSS an
+        st.error(f"🚨 SPEICHERFEHLER in {worksheet}:")
+        st.code(str(e))
+        return False
 
-# Daten initial laden
+# Daten laden
 df_tanken = load_data("tanken")
 df_service = load_data("service")
 
@@ -72,9 +75,6 @@ st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
 auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2025, 2036))
-
-if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True)
 
 menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
 
@@ -92,9 +92,10 @@ if menu == "⛽ Tanken":
     
     if st.button("Speichern ✅"):
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Liter": t_lit, "CHF/L": t_pr, "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer}])
-        df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
-        save_data(df_tanken, "tanken")
-        st.rerun()
+        neuer_df = pd.concat([df_tanken, new_row], ignore_index=True)
+        if save_data(neuer_df, "tanken"):
+             st.info("App wird in 2 Sek. aktualisiert...")
+             # st.rerun() entfernt, damit du den Fehler lesen kannst!
 
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
     if not tank_jahr.empty:
@@ -109,9 +110,9 @@ elif menu == "⚙️ Motor & Service":
     
     if st.button("Eintrag speichern"):
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_preis}])
-        df_service = pd.concat([df_service, new_row], ignore_index=True)
-        save_data(df_service, "service")
-        st.rerun()
+        neuer_df_s = pd.concat([df_service, new_row], ignore_index=True)
+        if save_data(neuer_df_s, "service"):
+            st.info("App wird aktualisiert...")
     
     service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
     if not service_jahr.empty:
@@ -120,17 +121,7 @@ elif menu == "⚙️ Motor & Service":
 
 elif menu == "💰 Finanzen":
     st.markdown(f"<div class='card'><h3>💰 Finanzen Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.0)
-    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.0)
-    
-    tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
-    serv_jahr = filter_nach_jahr(df_service, auswahl_jahr)
-    
-    sprit_sum = pd.to_numeric(tank_jahr["Total CHF"], errors='coerce').sum() if not tank_jahr.empty else 0
-    serv_sum = pd.to_numeric(serv_jahr["CHF"], errors='coerce').sum() if not serv_jahr.empty else 0
-    fix_sum = f_winter + f_platz + 350.0 + 1150.0
-    
-    col1, col2 = st.columns(2)
-    col1.metric("OHNE BENZIN", f"CHF {(fix_sum + serv_sum):,.2f}")
-    col2.metric("INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
+    sprit_sum = pd.to_numeric(df_tanken["Total CHF"], errors='coerce').sum() if not df_tanken.empty else 0
+    serv_sum = pd.to_numeric(df_service["CHF"], errors='coerce').sum() if not df_service.empty else 0
+    st.metric("TOTAL INKL. BENZIN", f"CHF {(3700 + serv_sum + sprit_sum):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
