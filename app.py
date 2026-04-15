@@ -1,117 +1,211 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import os
 import pandas as pd
 from datetime import datetime
 
-# --- APP SETUP & DESIGN ---
+# --- SETUP: PRO-APP DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
+    
+    /* TITEL: GOLD UND 45px */
     .truelove-title {
-        font-family: 'Georgia', serif; font-size: 45px; font-weight: bold;
-        color: #D4AF37; text-align: center; letter-spacing: 5px; margin-bottom: 0px;
+        font-family: 'Georgia', serif !important;
+        font-size: 45px !important;
+        font-weight: bold !important;
+        color: #D4AF37 !important;
+        text-align: center !important;
+        margin-bottom: 0px !important;
+        letter-spacing: 5px !important;
+        text-shadow: 2px 2px 10px rgba(0,0,0,0.5) !important;
+        display: block !important;
     }
+    
     .crownline-subtitle {
-        font-family: 'Helvetica Neue', sans-serif; font-size: 16px;
-        text-align: center; color: #FFFFFF; opacity: 0.8; letter-spacing: 3px;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 16px;
+        text-align: center;
+        margin-top: -5px;
+        color: #FFFFFF;
+        opacity: 0.8;
+        letter-spacing: 3px;
+    }
+
+    /* ALLGEMEINES STYLING */
+    label, .stRadio label, p, span {
+        color: #FFFFFF !important;
+        font-size: 20px !important;
+        font-weight: 500 !important;
+    }
+    div[data-testid="stRadio"] label { font-size: 45px !important; }
+    input { color: #000000 !important; font-size: 18px !important; }
+    img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
+    
+    .stButton>button {
+        background-color: #8B6914 !important;
+        color: white !important;
+        border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important;
+        font-size: 20px !important;
+    }
+
+    div[data-testid="stRadio"] > div {
+        background-color: rgba(5, 15, 30, 0.85);
+        padding: 15px;
+        border-radius: 15px;
+        border: 2px solid #D4AF37;
+        margin-top: 10px;
     }
     .card {
         background-color: rgba(255, 255, 255, 0.05);
-        padding: 25px; border-radius: 20px; border: 1px solid #D4AF37; margin-top: 20px;
+        padding: 25px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 20px;
     }
-    h3 { color: #D4AF37 !important; }
-    .stButton>button {
-        background-color: #8B6914 !important; color: white !important;
-        border: 1px solid #D4AF37 !important; width: 100%;
+    .spec-card {
+        background-color: rgba(212, 175, 55, 0.1);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 6px solid #D4AF37;
+        line-height: 1.6;
     }
+    h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
+    
+    [data-testid="stTable"] {
+        background-color: #0A1E3C !important;
+        border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stTable"] td, [data-testid="stTable"] th { color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS VERBINDUNG ---
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- DATEI-OPERATIONEN FÜR SPEICHERUNG ---
+TANK_FILE = "tank_daten.csv"
+SERVICE_FILE = "service_daten.csv"
 
-def load_data(worksheet):
-    try:
-        # Liest das Blatt und entfernt komplett leere Zeilen
-        return conn.read(worksheet=worksheet).dropna(how="all")
-    except Exception:
-        # Falls Blatt leer oder Fehler: Erstelle leere Tabelle mit passenden Spalten
-        if worksheet == "tanken":
-            return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
-        return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
+def load_data(file):
+    if os.path.exists(file):
+        return pd.read_csv(file).to_dict('records')
+    return []
 
-def save_and_refresh(df, worksheet):
-    conn.update(worksheet=worksheet, data=df)
-    st.cache_data.clear()
-    st.success("Daten erfolgreich synchronisiert! ✅")
+def save_data(data, file):
+    pd.DataFrame(data).to_csv(file, index=False)
 
-# Daten initial laden
-df_tanken = load_data("tanken")
-df_service = load_data("service")
+# Speicher initialisieren
+if 'tank_daten' not in st.session_state: 
+    st.session_state.tank_daten = load_data(TANK_FILE)
+if 'service_historie' not in st.session_state: 
+    st.session_state.service_historie = load_data(SERVICE_FILE)
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2025, 2036))
-menu = st.radio("NAVIGATION", ["⛽ Tanken", "⚙️ Service", "💰 Finanzen"], horizontal=True)
+# SAISONFILTER
+auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2026, 2036), index=0)
 
-# --- SEITE: TANKEN ---
+if os.path.exists("boot_gross.jpg"): 
+    st.image("boot_gross.jpg", use_container_width=True)
+
+menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
+
+# --- FILTER LOGIK ---
+def filter_nach_jahr(daten_liste, jahr):
+    return [eintrag for eintrag in daten_liste if str(jahr) in str(eintrag.get("Datum", ""))]
+
+tank_jahr = filter_nach_jahr(st.session_state.tank_daten, auswahl_jahr)
+service_jahr = filter_nach_jahr(st.session_state.service_historie, auswahl_jahr)
+
+# --- BEREICHE ---
 if menu == "⛽ Tanken":
-    st.markdown(f"<div class='card'><h3>⛽ Tankstopp {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    t_lit = col1.number_input("Liter", min_value=0.0, step=0.1)
-    t_pr = col2.number_input("CHF / L", value=2.15, step=0.01)
+    st.markdown(f"<div class='card'><h3>⛽ Tanken Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
+    
+    t_lit = st.number_input("Liter", min_value=0.0, step=0.01, format="%.2f")
+    t_pr = st.number_input("CHF / L", value=2.15, format="%.2f")
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
-    if st.button("Speichern"):
-        new_row = pd.DataFrame([{
-            "Datum": datetime.now().strftime("%d.%m.%Y"),
-            "Liter": t_lit, "CHF/L": t_pr,
-            "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer
-        }])
-        df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
-        save_and_refresh(df_tanken, "tanken")
-        st.rerun()
+    c1, c2 = st.columns(2)
+    if c1.button("Speichern ✅"):
+        if t_lit > 0:
+            st.session_state.tank_daten.append({
+                "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"), 
+                "Liter": f"{t_lit:.2f}", "CHF/L": f"{t_pr:.2f}",
+                "Total CHF": f"{(t_lit*t_pr):.2f}", "Wer": t_wer
+            })
+            save_data(st.session_state.tank_daten, TANK_FILE)
+            st.rerun()
+    if c2.button("Löschen 🗑️"):
+        if st.session_state.tank_daten: 
+            st.session_state.tank_daten.pop()
+            save_data(st.session_state.tank_daten, TANK_FILE)
+            st.rerun()
     
-    if not df_tanken.empty:
-        st.write("### Historie")
-        st.dataframe(df_tanken, use_container_width=True)
+    if tank_jahr:
+        st.table(pd.DataFrame(tank_jahr))
+        st.write("### 📊 Abrechnung")
+        df_tank_jahr = pd.DataFrame(tank_jahr)
+        df_tank_jahr["Total CHF"] = df_tank_jahr["Total CHF"].astype(float)
+        ausg = df_tank_jahr.groupby("Wer")["Total CHF"].sum()
+        st.info(f"Marc: **CHF {ausg.get('Marc', 0.0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne', 0.0):,.2f}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- SEITE: SERVICE ---
-elif menu == "⚙️ Service":
-    st.markdown(f"<div class='card'><h3>⚙️ Wartung & Log</h3>", unsafe_allow_html=True)
+elif menu == "⚙️ Motor & Service":
+    st.markdown(f"<div class='card'><h3>⚙️ Service Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
+    
+    # SPEZIFISCHE MOTORDATEN FÜR MERCRUISER 496 MAG HO
+    st.markdown(f"""<div class='spec-card'>
+    <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
+    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
+    <b>Hubraum:</b> 8.1 Liter (496 cid) V8 Big Block<br>
+    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
+    <b>Einspritzsystem:</b> Multi-Port EFI (PCM 555)<br>
+    <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
+    <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
+    
+    st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
-    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=1.0)
+    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
     
-    if st.button("Service-Eintrag speichern"):
-        new_row = pd.DataFrame([{
-            "Datum": datetime.now().strftime("%d.%m.%Y"),
-            "Arbeit": s_arbeit, "CHF": s_preis
-        }])
-        df_service = pd.concat([df_service, new_row], ignore_index=True)
-        save_and_refresh(df_service, "service")
-        st.rerun()
+    c3, c4 = st.columns(2)
+    if c3.button("Eintrag speichern"):
+        if s_arbeit:
+            st.session_state.service_historie.append({
+                "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"), 
+                "Arbeit": s_arbeit, "CHF": f"{s_preis:.2f}"
+            })
+            save_data(st.session_state.service_historie, SERVICE_FILE)
+            st.rerun()
+    if c4.button("Löschen 🗑️"):
+        if st.session_state.service_historie: 
+            st.session_state.service_historie.pop()
+            save_data(st.session_state.service_historie, SERVICE_FILE)
+            st.rerun()
     
-    if not df_service.empty:
-        st.write("### Service-Historie")
-        st.dataframe(df_service, use_container_width=True)
+    if service_jahr:
+        st.table(pd.DataFrame(service_jahr))
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- SEITE: FINANZEN ---
 elif menu == "💰 Finanzen":
-    st.markdown("<div class='card'><h3>💰 Kostenübersicht</h3>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><h3>💰 Finanzen Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
+    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.0, format="%.2f")
+    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.0, format="%.2f")
+    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.0, format="%.2f")
+    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.0, format="%.2f")
     
-    # Summen berechnen (Sicherstellen, dass es Zahlen sind)
-    t_sum = pd.to_numeric(df_tanken["Total CHF"], errors='coerce').sum()
-    s_sum = pd.to_numeric(df_service["CHF"], errors='coerce').sum()
+    sprit_sum = sum(float(i['Total CHF']) for i in tank_jahr)
+    serv_sum = sum(float(i['CHF']) for i in service_jahr)
+    fix_sum = f_winter + f_platz + f_steuer + f_vers
     
-    st.metric("Benzinkosten Total", f"CHF {t_sum:,.2f}")
-    st.metric("Servicekosten Total", f"CHF {s_sum:,.2f}")
-    st.divider()
-    st.metric("GESAMTKOSTEN", f"CHF {t_sum + s_sum:,.2f}")
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.write("---")
+    st.metric(f"Kosten Service Saison {auswahl_jahr}", f"CHF {serv_sum:,.2f}")
+    col1, col2 = st.columns(2)
+    col1.metric("TOTAL OHNE BENZIN", f"CHF {(fix_sum + serv_sum):,.2f}")
+    col2.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
+    st.info(f"⛽ Reine Benzinkosten {auswahl_jahr}: CHF {sprit_sum:,.2f}")
