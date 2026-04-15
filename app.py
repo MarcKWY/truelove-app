@@ -3,104 +3,115 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 
-# --- SETUP ---
+# --- APP SETUP & DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
-# --- DESIGN ---
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     .truelove-title {
         font-family: 'Georgia', serif; font-size: 45px; font-weight: bold;
-        color: #D4AF37; text-align: center; letter-spacing: 5px;
+        color: #D4AF37; text-align: center; letter-spacing: 5px; margin-bottom: 0px;
+    }
+    .crownline-subtitle {
+        font-family: 'Helvetica Neue', sans-serif; font-size: 16px;
+        text-align: center; color: #FFFFFF; opacity: 0.8; letter-spacing: 3px;
     }
     .card {
         background-color: rgba(255, 255, 255, 0.05);
-        padding: 20px; border-radius: 15px; border: 1px solid #D4AF37; margin-top: 10px;
+        padding: 25px; border-radius: 20px; border: 1px solid #D4AF37; margin-top: 20px;
     }
     h3 { color: #D4AF37 !important; }
+    .stButton>button {
+        background-color: #8B6914 !important; color: white !important;
+        border: 1px solid #D4AF37 !important; width: 100%;
+    }
     header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- VERBINDUNG ZU GOOGLE SHEETS ---
+# --- GOOGLE SHEETS VERBINDUNG ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-def load_data(sheet):
+def load_data(worksheet):
     try:
-        # Versucht Daten zu lesen, falls leer -> leeres DataFrame mit Spalten erstellen
-        df = conn.read(worksheet=sheet)
-        return df.dropna(how="all")
-    except:
-        if sheet == "tanken":
+        # Liest das Blatt und entfernt komplett leere Zeilen
+        return conn.read(worksheet=worksheet).dropna(how="all")
+    except Exception:
+        # Falls Blatt leer oder Fehler: Erstelle leere Tabelle mit passenden Spalten
+        if worksheet == "tanken":
             return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
-        else:
-            return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
+        return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
-def save_data(df, sheet):
-    conn.update(worksheet=sheet, data=df)
+def save_and_refresh(df, worksheet):
+    conn.update(worksheet=worksheet, data=df)
     st.cache_data.clear()
+    st.success("Daten erfolgreich synchronisiert! ✅")
 
-# --- DATEN LADEN ---
+# Daten initial laden
 df_tanken = load_data("tanken")
 df_service = load_data("service")
 
-# --- UI ---
+# --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
-st.write("---")
+st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-auswahl_jahr = st.selectbox("📅 Saison", options=range(2025, 2030))
-menu = st.radio("MENÜ", ["⛽ Tanken", "⚙️ Service", "💰 Finanzen"], horizontal=True)
+auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2025, 2036))
+menu = st.radio("NAVIGATION", ["⛽ Tanken", "⚙️ Service", "💰 Finanzen"], horizontal=True)
 
-# --- TANKEN ---
+# --- SEITE: TANKEN ---
 if menu == "⛽ Tanken":
-    st.markdown("<div class='card'><h3>Tankstopp erfassen</h3>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><h3>⛽ Tankstopp {auswahl_jahr}</h3>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    lit = col1.number_input("Liter", min_value=0.0)
-    preis = col2.number_input("CHF/L", value=2.15)
-    wer = st.radio("Wer zahlt?", ["Marc", "Fabienne"], horizontal=True)
+    t_lit = col1.number_input("Liter", min_value=0.0, step=0.1)
+    t_pr = col2.number_input("CHF / L", value=2.15, step=0.01)
+    t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
     if st.button("Speichern"):
-        neuer_eintrag = pd.DataFrame([{
+        new_row = pd.DataFrame([{
             "Datum": datetime.now().strftime("%d.%m.%Y"),
-            "Liter": lit, "CHF/L": preis,
-            "Total CHF": round(lit * preis, 2), "Wer": wer
+            "Liter": t_lit, "CHF/L": t_pr,
+            "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer
         }])
-        df_tanken = pd.concat([df_tanken, neuer_eintrag], ignore_index=True)
-        save_data(df_tanken, "tanken")
-        st.success("Erfolgreich gespeichert!")
+        df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
+        save_and_refresh(df_tanken, "tanken")
         st.rerun()
     
-    st.write("### Historie")
-    st.dataframe(df_tanken)
+    if not df_tanken.empty:
+        st.write("### Historie")
+        st.dataframe(df_tanken, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- SERVICE ---
+# --- SEITE: SERVICE ---
 elif menu == "⚙️ Service":
-    st.markdown("<div class='card'><h3>Service-Log</h3>", unsafe_allow_html=True)
-    arbeit = st.text_input("Was wurde gemacht?")
-    kosten = st.number_input("Kosten in CHF", min_value=0.0)
+    st.markdown(f"<div class='card'><h3>⚙️ Wartung & Log</h3>", unsafe_allow_html=True)
+    s_arbeit = st.text_input("Was wurde gemacht?")
+    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=1.0)
     
-    if st.button("Service speichern"):
-        neuer_service = pd.DataFrame([{
+    if st.button("Service-Eintrag speichern"):
+        new_row = pd.DataFrame([{
             "Datum": datetime.now().strftime("%d.%m.%Y"),
-            "Arbeit": arbeit, "CHF": kosten
+            "Arbeit": s_arbeit, "CHF": s_preis
         }])
-        df_service = pd.concat([df_service, neuer_service], ignore_index=True)
-        save_data(df_service, "service")
-        st.success("Service gespeichert!")
+        df_service = pd.concat([df_service, new_row], ignore_index=True)
+        save_and_refresh(df_service, "service")
         st.rerun()
     
-    st.write("### Bisherige Arbeiten")
-    st.dataframe(df_service)
+    if not df_service.empty:
+        st.write("### Service-Historie")
+        st.dataframe(df_service, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- FINANZEN ---
+# --- SEITE: FINANZEN ---
 elif menu == "💰 Finanzen":
-    st.markdown("<div class='card'><h3>Kostenübersicht</h3>", unsafe_allow_html=True)
-    t_sum = pd.to_numeric(df_tanken["Total CHF"]).sum() if not df_tanken.empty else 0
-    s_sum = pd.to_numeric(df_service["CHF"]).sum() if not df_service.empty else 0
-    st.metric("Gesamtkosten Benzin", f"CHF {t_sum:,.2f}")
-    st.metric("Gesamtkosten Service", f"CHF {s_sum:,.2f}")
-    st.metric("TOTAL", f"CHF {t_sum + s_sum:,.2f}")
+    st.markdown("<div class='card'><h3>💰 Kostenübersicht</h3>", unsafe_allow_html=True)
+    
+    # Summen berechnen (Sicherstellen, dass es Zahlen sind)
+    t_sum = pd.to_numeric(df_tanken["Total CHF"], errors='coerce').sum()
+    s_sum = pd.to_numeric(df_service["CHF"], errors='coerce').sum()
+    
+    st.metric("Benzinkosten Total", f"CHF {t_sum:,.2f}")
+    st.metric("Servicekosten Total", f"CHF {s_sum:,.2f}")
+    st.divider()
+    st.metric("GESAMTKOSTEN", f"CHF {t_sum + s_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
