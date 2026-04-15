@@ -1,5 +1,5 @@
 import streamlit as st
-import os
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 
@@ -9,8 +9,6 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    
-    /* TITEL: GOLD UND 45px */
     .truelove-title {
         font-family: 'Georgia', serif !important;
         font-size: 45px !important;
@@ -22,7 +20,6 @@ st.markdown("""
         text-shadow: 2px 2px 10px rgba(0,0,0,0.5) !important;
         display: block !important;
     }
-    
     .crownline-subtitle {
         font-family: 'Helvetica Neue', sans-serif;
         font-size: 16px;
@@ -32,31 +29,12 @@ st.markdown("""
         opacity: 0.8;
         letter-spacing: 3px;
     }
-
-    /* ALLGEMEINES STYLING */
-    label, .stRadio label, p, span {
-        color: #FFFFFF !important;
-        font-size: 20px !important;
-        font-weight: 500 !important;
-    }
-    div[data-testid="stRadio"] label { font-size: 45px !important; }
-    input { color: #000000 !important; font-size: 18px !important; }
-    img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
-    
+    label, p, span { color: #FFFFFF !important; font-size: 20px !important; }
     .stButton>button {
         background-color: #8B6914 !important;
         color: white !important;
         border: 1px solid #D4AF37 !important;
         border-radius: 10px !important;
-        font-size: 20px !important;
-    }
-
-    div[data-testid="stRadio"] > div {
-        background-color: rgba(5, 15, 30, 0.85);
-        padding: 15px;
-        border-radius: 15px;
-        border: 2px solid #D4AF37;
-        margin-top: 10px;
     }
     .card {
         background-color: rgba(255, 255, 255, 0.05);
@@ -70,145 +48,101 @@ st.markdown("""
         padding: 20px;
         border-radius: 12px;
         border-left: 6px solid #D4AF37;
-        line-height: 1.6;
     }
     h2, h3, b { color: #D4AF37 !important; }
     header, footer { visibility: hidden; }
-    
-    [data-testid="stTable"] {
-        background-color: #0A1E3C !important;
-        border: 1px solid #D4AF37 !important;
-        border-radius: 10px !important;
-    }
-    [data-testid="stTable"] td, [data-testid="stTable"] th { color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATEI-OPERATIONEN FÜR SPEICHERUNG ---
-TANK_FILE = "tank_daten.csv"
-SERVICE_FILE = "service_daten.csv"
+# --- GOOGLE SHEETS VERBINDUNG ---
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-def load_data(file):
-    if os.path.exists(file):
-        return pd.read_csv(file).to_dict('records')
-    return []
+def load_data(worksheet_name):
+    try:
+        return conn.read(worksheet=worksheet_name).dropna(how="all")
+    except:
+        return pd.DataFrame()
 
-def save_data(data, file):
-    pd.DataFrame(data).to_csv(file, index=False)
+def save_data(df, worksheet_name):
+    conn.update(worksheet=worksheet_name, data=df)
+    st.cache_data.clear()
 
-# Speicher initialisieren
-if 'tank_daten' not in st.session_state: 
-    st.session_state.tank_daten = load_data(TANK_FILE)
-if 'service_historie' not in st.session_state: 
-    st.session_state.service_historie = load_data(SERVICE_FILE)
+# Daten laden
+df_tanken = load_data("tanken")
+df_service = load_data("service")
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# SAISONFILTER
-auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2026, 2036), index=0)
-
-if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True)
+auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2025, 2036), index=0)
 
 menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
 
 # --- FILTER LOGIK ---
-def filter_nach_jahr(daten_liste, jahr):
-    return [eintrag for eintrag in daten_liste if str(jahr) in str(eintrag.get("Datum", ""))]
-
-tank_jahr = filter_nach_jahr(st.session_state.tank_daten, auswahl_jahr)
-service_jahr = filter_nach_jahr(st.session_state.service_historie, auswahl_jahr)
+def filter_nach_jahr(df, jahr):
+    if df.empty: return df
+    return df[df['Datum'].astype(str).str.contains(str(jahr))]
 
 # --- BEREICHE ---
 if menu == "⛽ Tanken":
     st.markdown(f"<div class='card'><h3>⛽ Tanken Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
     
-    t_lit = st.number_input("Liter", min_value=0.0, step=0.01, format="%.2f")
-    t_pr = st.number_input("CHF / L", value=2.15, format="%.2f")
+    t_lit = st.number_input("Liter", min_value=0.0, step=0.01)
+    t_pr = st.number_input("CHF / L", value=2.15)
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
-    c1, c2 = st.columns(2)
-    if c1.button("Speichern ✅"):
-        if t_lit > 0:
-            st.session_state.tank_daten.append({
-                "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"), 
-                "Liter": f"{t_lit:.2f}", "CHF/L": f"{t_pr:.2f}",
-                "Total CHF": f"{(t_lit*t_pr):.2f}", "Wer": t_wer
-            })
-            save_data(st.session_state.tank_daten, TANK_FILE)
-            st.rerun()
-    if c2.button("Löschen 🗑️"):
-        if st.session_state.tank_daten: 
-            st.session_state.tank_daten.pop()
-            save_data(st.session_state.tank_daten, TANK_FILE)
-            st.rerun()
+    if st.button("Speichern ✅"):
+        new_row = pd.DataFrame([{
+            "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"),
+            "Liter": t_lit, "CHF/L": t_pr,
+            "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer
+        }])
+        df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
+        save_data(df_tanken, "tanken")
+        st.success("Gespeichert!")
+        st.rerun()
     
-    if tank_jahr:
-        st.table(pd.DataFrame(tank_jahr))
-        st.write("### 📊 Abrechnung")
-        df_tank_jahr = pd.DataFrame(tank_jahr)
-        df_tank_jahr["Total CHF"] = df_tank_jahr["Total CHF"].astype(float)
-        ausg = df_tank_jahr.groupby("Wer")["Total CHF"].sum()
-        st.info(f"Marc: **CHF {ausg.get('Marc', 0.0):,.2f}** | Fabienne: **CHF {ausg.get('Fabienne', 0.0):,.2f}**")
+    tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
+    if not tank_jahr.empty:
+        st.table(tank_jahr)
+        ausg = tank_jahr.groupby("Wer")["Total CHF"].sum()
+        st.info(f"Marc: CHF {ausg.get('Marc', 0.0):.2f} | Fabienne: CHF {ausg.get('Fabienne', 0.0):.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "⚙️ Motor & Service":
     st.markdown(f"<div class='card'><h3>⚙️ Service Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
     
-    # SPEZIFISCHE MOTORDATEN FÜR MERCRUISER 496 MAG HO
-    st.markdown(f"""<div class='spec-card'>
-    <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
-    <b>Leistung:</b> 425 HP (317 kW) @ 4400-4800 RPM<br>
-    <b>Hubraum:</b> 8.1 Liter (496 cid) V8 Big Block<br>
-    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2<br>
-    <b>Einspritzsystem:</b> Multi-Port EFI (PCM 555)<br>
-    <b>Ölkapazität:</b> 8.5 Liter SAE 25W-40 Synthetic Blend<br>
-    <b>Kühlung:</b> Zweikreiskühlung (Closed Cooling)</div>""", unsafe_allow_html=True)
+    st.markdown("<div class='spec-card'><b>Motor:</b> Mercruiser 496 MAG HO | 8.1L V8</div>", unsafe_allow_html=True)
     
-    st.write("### 🔧 Service Log")
     s_arbeit = st.text_input("Was wurde gemacht?")
-    s_preis = st.number_input("Kosten CHF", min_value=0.0, step=0.01, format="%.2f")
+    s_preis = st.number_input("Kosten CHF", min_value=0.0)
     
-    c3, c4 = st.columns(2)
-    if c3.button("Eintrag speichern"):
-        if s_arbeit:
-            st.session_state.service_historie.append({
-                "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"), 
-                "Arbeit": s_arbeit, "CHF": f"{s_preis:.2f}"
-            })
-            save_data(st.session_state.service_historie, SERVICE_FILE)
-            st.rerun()
-    if c4.button("Löschen 🗑️"):
-        if st.session_state.service_historie: 
-            st.session_state.service_historie.pop()
-            save_data(st.session_state.service_historie, SERVICE_FILE)
-            st.rerun()
+    if st.button("Eintrag speichern"):
+        new_row = pd.DataFrame([{
+            "Datum": datetime.now().strftime(f"%d.%m.{auswahl_jahr}"),
+            "Arbeit": s_arbeit, "CHF": s_preis
+        }])
+        df_service = pd.concat([df_service, new_row], ignore_index=True)
+        save_data(df_service, "service")
+        st.success("Service geloggt!")
+        st.rerun()
     
-    if service_jahr:
-        st.table(pd.DataFrame(service_jahr))
+    service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
+    if not service_jahr.empty:
+        st.table(service_jahr)
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "💰 Finanzen":
     st.markdown(f"<div class='card'><h3>💰 Finanzen Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    f_winter = st.number_input("❄️ Winterlager (CHF)", value=2200.0, format="%.2f")
-    f_platz = st.number_input("⚓ Bootsplatz (CHF)", value=1500.0, format="%.2f")
-    f_steuer = st.number_input("📜 Steuern (CHF)", value=350.0, format="%.2f")
-    f_vers = st.number_input("🛡️ Versicherung (CHF)", value=1150.0, format="%.2f")
+    f_winter = st.number_input("❄️ Winterlager", value=2200.0)
+    f_platz = st.number_input("⚓ Bootsplatz", value=1500.0)
     
-    sprit_sum = sum(float(i['Total CHF']) for i in tank_jahr)
-    serv_sum = sum(float(i['CHF']) for i in service_jahr)
-    fix_sum = f_winter + f_platz + f_steuer + f_vers
+    tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
+    serv_jahr = filter_nach_jahr(df_service, auswahl_jahr)
     
-    st.write("---")
-    st.metric(f"Kosten Service Saison {auswahl_jahr}", f"CHF {serv_sum:,.2f}")
-    col1, col2 = st.columns(2)
-    col1.metric("TOTAL OHNE BENZIN", f"CHF {(fix_sum + serv_sum):,.2f}")
-    col2.metric("GESAMTKOSTEN INKL. BENZIN", f"CHF {(fix_sum + serv_sum + sprit_sum):,.2f}")
-    st.info(f"⛽ Reine Benzinkosten {auswahl_jahr}: CHF {sprit_sum:,.2f}")
+    sprit_sum = tank_jahr["Total CHF"].sum() if not tank_jahr.empty else 0
+    serv_sum = serv_jahr["CHF"].sum() if not serv_jahr.empty else 0
+    
+    st.metric("GESAMTKOSTEN SAISON", f"CHF {(f_winter + f_platz + sprit_sum + serv_sum):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
-
-st.caption(f"Truelove Bridge v25.9 - Motor Specs Update")
