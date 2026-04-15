@@ -7,7 +7,7 @@ from datetime import datetime
 # --- SETUP: DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
-SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEhJTco_d0sr8csXaXzq5R9kdSgRoJLJlO5g2NGoO-H2oWFxsOCiatkgsDVcjbmlAT/exec"
+SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhDxQNTjyCGLLR5hZwUo_7tQ5wEohouVXHrbn-FJzDKUPJ8c0MmbzfwfiOxUYDyRwE/exec"
 
 st.markdown("""
     <style>
