@@ -41,15 +41,14 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS VERBINDUNG (DIREKT) ---
-# Hier steht dein Link nun fest im Code
+# --- GOOGLE SHEETS VERBINDUNG (FESTE URL) ---
 TABLE_URL = "https://google.com"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        # Wir sagen der App hier direkt, welches Sheet sie öffnen soll
+        # Lädt Daten direkt über die URL
         df = conn.read(spreadsheet=TABLE_URL, worksheet=worksheet)
         return df.dropna(how="all")
     except:
@@ -58,10 +57,11 @@ def load_data(worksheet):
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
-    # Auch beim Speichern nutzen wir die URL direkt
+    # Speichert Daten direkt über die URL
     conn.update(spreadsheet=TABLE_URL, worksheet=worksheet, data=df)
     st.cache_data.clear()
 
+# Daten initial laden
 df_tanken = load_data("tanken")
 df_service = load_data("service")
 
@@ -90,16 +90,21 @@ if menu == "⛽ Tanken":
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
     if st.button("Speichern ✅"):
-        new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Liter": t_lit, "CHF/L": t_pr, "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer}])
+        new_row = pd.DataFrame([{
+            "Datum": datetime.now().strftime(f"%d.%m.%Y"), 
+            "Liter": t_lit, "CHF/L": t_pr, 
+            "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer
+        }])
         df_tanken = pd.concat([df_tanken, new_row], ignore_index=True)
         save_data(df_tanken, "tanken")
+        st.success("Tanken gespeichert!")
         st.rerun()
 
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
     if not tank_jahr.empty:
         st.table(tank_jahr)
         with st.expander("🗑️ Eintrag löschen"):
-            del_idx = st.number_input("Zeilen-Nummer zum Löschen", min_value=0, max_value=len(df_tanken)-1, step=1)
+            del_idx = st.number_input("Zeilen-Nummer zum Löschen", min_value=0, max_value=max(0, len(df_tanken)-1), step=1)
             if st.button("Diesen Eintrag entfernen"):
                 df_tanken = df_tanken.drop(df_tanken.index[del_idx])
                 save_data(df_tanken, "tanken")
@@ -123,13 +128,14 @@ elif menu == "⚙️ Motor & Service":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_preis}])
         df_service = pd.concat([df_service, new_row], ignore_index=True)
         save_data(df_service, "service")
+        st.success("Service gespeichert!")
         st.rerun()
     
     service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
     if not service_jahr.empty:
         st.table(service_jahr)
         with st.expander("🗑️ Service-Eintrag löschen"):
-            del_s_idx = st.number_input("Index zum Löschen", min_value=0, max_value=len(df_service)-1, step=1, key="del_s")
+            del_s_idx = st.number_input("Index zum Löschen", min_value=0, max_value=max(0, len(df_service)-1), step=1, key="del_s")
             if st.button("Diesen Service-Eintrag entfernen"):
                 df_service = df_service.drop(df_service.index[del_s_idx])
                 save_data(df_service, "service")
