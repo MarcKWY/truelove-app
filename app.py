@@ -9,7 +9,6 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 # Deine Web-App URL (Bitte prüfen, ob sie noch aktuell ist!)
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEhJTco_d0sr8csXaXzq5R9kdSgRoJLJlO5g2NGoO-H2oWFxsOCiatkgsDVcjbmlAT/exec"
-
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
