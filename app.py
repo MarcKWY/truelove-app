@@ -22,6 +22,7 @@ st.markdown("""
     }
     label, .stRadio label, p, span { color: #FFFFFF !important; font-size: 20px !important; font-weight: 500 !important; }
     input { color: #000000 !important; font-size: 18px !important; }
+    img { border: 2px solid #D4AF37 !important; border-radius: 15px !important; }
     .stButton>button {
         background-color: #8B6914 !important; color: white !important;
         border: 1px solid #D4AF37 !important; border-radius: 10px !important; width: 100%;
@@ -40,27 +41,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS VERBINDUNG (VOLLER LINK) ---
-# Hier nutzen wir wieder den vollen Link, da die ID allein den 404-Fehler verursacht hat
-FULL_URL = "https://google.com"
-
+# --- GOOGLE SHEETS VERBINDUNG ---
+# Wir nutzen die URL aus den Secrets für maximale Sicherheit
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(worksheet):
     try:
-        # Laden mit der vollen URL
-        return conn.read(spreadsheet=FULL_URL, worksheet=worksheet).dropna(how="all")
+        # Hier wird das Sheet gelesen
+        return conn.read(worksheet=worksheet).dropna(how="all")
     except Exception as e:
+        st.warning(f"Tabelle '{worksheet}' ist noch leer oder wird gerade erstellt.")
         if worksheet == "tanken":
             return pd.DataFrame(columns=["Datum", "Liter", "CHF/L", "Total CHF", "Wer"])
         return pd.DataFrame(columns=["Datum", "Arbeit", "CHF"])
 
 def save_data(df, worksheet):
     try:
-        # Speichern mit der vollen URL
-        conn.update(spreadsheet=FULL_URL, worksheet=worksheet, data=df)
+        conn.update(worksheet=worksheet, data=df)
         st.cache_data.clear()
-        st.success(f"Eintrag in '{worksheet}' wurde im Google Sheet gespeichert!")
+        st.success("✅ Erfogreich im Google Sheet gespeichert!")
         return True
     except Exception as e:
         st.error(f"🚨 Fehler beim Speichern: {e}")
@@ -76,6 +75,10 @@ st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_h
 
 auswahl_jahr = st.selectbox("📅 Saison wählen", options=range(2025, 2036))
 
+# BILDER WIEDER EINFÜGEN
+if os.path.exists("boot_gross.jpg"): 
+    st.image("boot_gross.jpg", use_container_width=True)
+
 menu = st.radio("BRIDGE CONTROL", ["⛽ Tanken", "⚙️ Motor & Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
 
 def filter_nach_jahr(df, jahr):
@@ -86,15 +89,18 @@ def filter_nach_jahr(df, jahr):
 # --- BEREICHE ---
 if menu == "⛽ Tanken":
     st.markdown(f"<div class='card'><h3>⛽ Tanken Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    t_lit = st.number_input("Liter", min_value=0.0, step=0.01)
-    t_pr = st.number_input("CHF / L", value=2.15)
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
+    
+    col1, col2 = st.columns(2)
+    t_lit = col1.number_input("Liter", min_value=0.0, step=0.01)
+    t_pr = col2.number_input("CHF / L", value=2.15)
     t_wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
     
     if st.button("Speichern ✅"):
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Liter": t_lit, "CHF/L": t_pr, "Total CHF": round(t_lit * t_pr, 2), "Wer": t_wer}])
         neuer_df = pd.concat([df_tanken, new_row], ignore_index=True)
         if save_data(neuer_df, "tanken"):
-             st.info("Daten wurden synchronisiert. Bitte Seite neu laden oder Tab wechseln.")
+            st.rerun()
 
     tank_jahr = filter_nach_jahr(df_tanken, auswahl_jahr)
     if not tank_jahr.empty:
@@ -103,7 +109,14 @@ if menu == "⛽ Tanken":
 
 elif menu == "⚙️ Motor & Service":
     st.markdown(f"<div class='card'><h3>⚙️ Service Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    st.markdown(f"""<div class='spec-card'><b>Modell:</b> Mercruiser 496 MAG HO<br><b>Leistung:</b> 317 kW (425 HP)<br><b>Hubraum:</b> 8.1 Liter V8</div>""", unsafe_allow_html=True)
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
+    
+    st.markdown(f"""<div class='spec-card'>
+    <b>Modell:</b> Mercruiser 496 MAG HO (High Output)<br>
+    <b>Leistung:</b> 317 kW (425 HP) @ 4400-4800 RPM | <b>Hubraum:</b> 8.1 Liter V8<br>
+    <b>Zündfolge:</b> 1-8-4-3-6-5-7-2 | <b>Einspritzung:</b> Multi-Port EFI (PCM 555)<br>
+    <b>Öl:</b> 8.5 Liter SAE 25W-40 Synthetic Blend | <b>Kühlung:</b> Zweikreiskühlung</div>""", unsafe_allow_html=True)
+    
     s_arbeit = st.text_input("Was wurde gemacht?")
     s_preis = st.number_input("Kosten CHF", min_value=0.0)
     
@@ -111,7 +124,7 @@ elif menu == "⚙️ Motor & Service":
         new_row = pd.DataFrame([{"Datum": datetime.now().strftime(f"%d.%m.%Y"), "Arbeit": s_arbeit, "CHF": s_preis}])
         neuer_df_s = pd.concat([df_service, new_row], ignore_index=True)
         if save_data(neuer_df_s, "service"):
-            st.info("Service wurde synchronisiert.")
+            st.rerun()
     
     service_jahr = filter_nach_jahr(df_service, auswahl_jahr)
     if not service_jahr.empty:
@@ -120,11 +133,12 @@ elif menu == "⚙️ Motor & Service":
 
 elif menu == "💰 Finanzen":
     st.markdown(f"<div class='card'><h3>💰 Finanzen Saison {auswahl_jahr}</h3>", unsafe_allow_html=True)
-    # Einfache Berechnung basierend auf den geladenen Daten
     sprit_sum = pd.to_numeric(df_tanken["Total CHF"], errors='coerce').sum() if not df_tanken.empty else 0
     serv_sum = pd.to_numeric(df_service["CHF"], errors='coerce').sum() if not df_service.empty else 0
+    fix_kosten = 3700.0 # Bootsplatz + Winterlager etc.
     
     col1, col2 = st.columns(2)
-    col1.metric("BENZIN TOTAL", f"CHF {sprit_sum:,.2f}")
-    col2.metric("SERVICE TOTAL", f"CHF {serv_sum:,.2f}")
+    col1.metric("OHNE BENZIN", f"CHF {(fix_kosten + serv_sum):,.2f}")
+    col2.metric("INKL. BENZIN", f"CHF {(fix_kosten + serv_sum + sprit_sum):,.2f}")
+    st.info(f"⛽ Reiner Sprit {auswahl_jahr}: CHF {sprit_sum:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
