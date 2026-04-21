@@ -9,58 +9,50 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 SCRIPT_URL = "https://google.com"
 
-# Erweitertes CSS für goldene Schriftfarben und kleinere Bilder
+# CSS für Farben und Bildgrössen
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     
-    /* Titel & Subtitel */
+    /* Titel Gold */
     .truelove-title { 
         font-family: 'Georgia', serif; font-size: 40px; font-weight: bold; 
         color: #D4AF37; text-align: center; letter-spacing: 5px; margin-bottom: 0px;
     }
+    
+    /* Crownline Untertitel Silber/Weiss */
     .crownline-subtitle { 
         font-family: 'Helvetica Neue', sans-serif; font-size: 16px; 
-        text-align: center; color: #FFFFFF; opacity: 0.8; letter-spacing: 3px; margin-bottom: 20px;
+        text-align: center; color: #E0E0E0; opacity: 0.9; letter-spacing: 3px; margin-bottom: 20px;
     }
     
-    /* Karten-Design */
     .card { 
         background-color: rgba(255,255,255,0.05); padding: 20px; 
         border-radius: 15px; border: 1px solid #D4AF37; margin-top: 10px; margin-bottom: 20px;
     }
     
-    /* GOLDENE SCHRIFT FÜR ÜBERSCHRIFTEN & LABELS */
-    h3, h4, label, .stMarkdown p { color: #D4AF37 !important; }
+    /* Farben für Labels und Werte (Silber/Weiss) */
+    h3 { color: #D4AF37 !important; }
+    .white-text, .stMetric label, [data-testid="stMetricValue"], label, .stMarkdown p { 
+        color: #F8F8F8 !important; 
+    }
     
-    /* Speziell für Radio Buttons (Marc, Fabienne, Menü) */
-    div[data-testid="stMarkdownContainer"] p { color: #D4AF37 !important; font-weight: bold; }
+    /* Goldene Akzente für Menü und wichtige Elemente */
+    div[data-testid="stMarkdownContainer"] p strong { color: #D4AF37 !important; }
     .stRadio label { color: #D4AF37 !important; }
-    
-    /* Metriken (Zahlen in der Übersicht) */
-    .stMetric label { color: #D4AF37 !important; font-weight: bold !important; }
-    [data-testid="stMetricValue"] { color: #FFFFFF !important; }
-
-    /* Eingabefelder */
-    input { color: #D4AF37 !important; }
     
     /* Buttons */
     .stButton>button { 
         background-color: #8B6914 !important; color: white !important; 
         border: 1px solid #D4AF37 !important; width: 100%; border-radius: 10px;
     }
-    .stButton>button[kind="secondary"] {
-        background-color: #441111 !important; border: 1px solid #ff4b4b !important;
-        color: white !important; width: auto !important;
-    }
     
     /* Tabellen */
     [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
     [data-testid="stTable"] td { color: white !important; }
 
-    /* Bild-Verkleinerung */
-    .small-img { display: flex; justify-content: center; }
-    .small-img img { width: 150px !important; border-radius: 10px; border: 1px solid #D4AF37; }
+    /* Bild-Zentrierung */
+    .center-img { display: flex; justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -81,7 +73,6 @@ if 'service_data' not in st.session_state:
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# Hauptbild (Gross)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
@@ -108,29 +99,28 @@ if menu == "📋 Übersicht":
     
     col1, col2 = st.columns(2)
     with col1:
-        st.write(f"⛽ Benzin: **CHF {sprit_total:,.2f}**")
-        st.write(f"⚙️ Service: **CHF {service_total:,.2f}**")
+        st.markdown(f"<span class='white-text'>⛽ Benzin:</span> **CHF {sprit_total:,.2f}**", unsafe_allow_html=True)
+        st.markdown(f"<span class='white-text'>⚙️ Service:</span> **CHF {service_total:,.2f}**", unsafe_allow_html=True)
     with col2:
-        st.write(f"🏗️ Fixkosten: **CHF {fix_total:,.2f}**")
+        st.markdown(f"<span class='white-text'>🏗️ Fixkosten:</span> **CHF {fix_total:,.2f}**", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- FINANZEN ---
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Jährliche Fixkosten</h3>", unsafe_allow_html=True)
     for posten, betrag in fix_kosten.items():
-        c1, c2 = st.columns([2,1])
-        c1.write(posten)
-        c2.write(f"CHF {betrag:,.2f}")
+        c1, c2 = st.columns()
+        c1.markdown(f"<span class='white-text'>{posten}</span>", unsafe_allow_html=True)
+        c2.markdown(f"<span class='white-text'>CHF {betrag:,.2f}</span>", unsafe_allow_html=True)
     st.divider()
-    st.markdown(f"**Total Fixkosten: CHF {fix_total:,.2f}**")
+    st.markdown(f"<span class='white-text'>**Total Fixkosten: CHF {fix_total:,.2f}**</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- TANKEN ---
 elif menu == "⛽ Tanken":
-    # Kleines Bild zentriert
     if os.path.exists("tanken.jpg"):
-        col_img1, col_img2, col_img3 = st.columns([1,1,1])
-        col_img2.image("tanken.jpg", width=150)
+        c1, c2, c3 = st.columns([1, 2, 1])
+        c2.image("tanken.jpg", width=300)
     
     st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -149,18 +139,12 @@ elif menu == "⛽ Tanken":
     if st.session_state.tank_data:
         df = pd.DataFrame(st.session_state.tank_data, columns=["Datum", "Liter", "CHF/L", "Total", "Wer"])
         st.table(df)
-        with st.expander("Einträge löschen"):
-            for i, row in enumerate(st.session_state.tank_data):
-                if st.button(f"🗑️ {row[0]} - {row[1]}L", key=f"del_t_{i}"):
-                    st.session_state.tank_data.pop(i)
-                    st.rerun()
 
 # --- SERVICE ---
 elif menu == "⚙️ Service":
-    # Kleines Bild zentriert
     if os.path.exists("motor.jpg"):
-        col_img1, col_img2, col_img3 = st.columns([1,1,1])
-        col_img2.image("motor.jpg", width=150)
+        c1, c2, c3 = st.columns([1, 2, 1])
+        c2.image("motor.jpg", width=300)
 
     st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
     arb = st.text_input("Was wurde gemacht?")
@@ -177,8 +161,3 @@ elif menu == "⚙️ Service":
     if st.session_state.service_data:
         df_s = pd.DataFrame(st.session_state.service_data, columns=["Datum", "Arbeit", "CHF"])
         st.table(df_s)
-        with st.expander("Einträge löschen"):
-            for i, row in enumerate(st.session_state.service_data):
-                if st.button(f"🗑️ {row[0]} - {row[1]}", key=f"del_s_{i}"):
-                    st.session_state.service_data.pop(i)
-                    st.rerun()
