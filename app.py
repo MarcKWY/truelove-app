@@ -7,10 +7,8 @@ import os
 # --- SETUP & DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered")
 
-# Dein Google-Link für die Datenbank-Anbindung
 SCRIPT_URL = "https://google.com"
 
-# CSS für das edle Design (Gold/Schwarz)
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
@@ -26,105 +24,100 @@ st.markdown("""
         background-color: rgba(255,255,255,0.05); padding: 20px; 
         border-radius: 15px; border: 1px solid #D4AF37; margin-top: 10px;
     }
-    h3 { color: #D4AF37 !important; margin-top: 0px; }
+    h3 { color: #D4AF37 !important; }
     .stButton>button { 
         background-color: #8B6914 !important; color: white !important; 
-        border: 1px solid #D4AF37 !important; width: 100%; border-radius: 10px; height: 3em;
+        border: 1px solid #D4AF37 !important; width: 100%; border-radius: 10px;
     }
-    [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
-    [data-testid="stTable"] td { color: white !important; font-size: 16px !important; }
+    .delete-btn>button {
+        background-color: #441111 !important; border: 1px solid #ff4b4b !important;
+        font-size: 10px !important; padding: 0px !important; height: 25px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATEN-LOGIK (Laden aus Google Sheets) ---
+# --- DATEN LADEN ---
 if 'tank_data' not in st.session_state:
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet=tanken", timeout=10)
+        r = requests.get(f"{SCRIPT_URL}?sheet=tanken", timeout=5)
         st.session_state.tank_data = r.json()[1:]
     except:
         st.session_state.tank_data = []
 
 if 'service_data' not in st.session_state:
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet=service", timeout=10)
+        r = requests.get(f"{SCRIPT_URL}?sheet=service", timeout=5)
         st.session_state.service_data = r.json()[1:]
     except:
         st.session_state.service_data = []
 
-# --- UI HEADER ---
+# --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# Bild anzeigen, falls vorhanden
-if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True)
-
-# Menü-Auswahl
 menu = st.radio("MENU", ["⛽ Tanken", "⚙️ Service", "💰 Finanzen"], horizontal=True, label_visibility="collapsed")
 
 # --- TANKEN ---
 if menu == "⛽ Tanken":
+    if os.path.exists("tanken.jpg"):
+        st.image("tanken.jpg", use_container_width=True)
+    
     st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
-    lit = c1.number_input("Liter", min_value=0.0, step=0.01, format="%.2f")
-    pr = c2.number_input("CHF/L", value=2.15, format="%.2f")
+    lit = c1.number_input("Liter", min_value=0.0, step=0.01)
+    pr = c2.number_input("CHF/L", value=2.15)
     wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
 
     if st.button("Speichern ✅"):
-        timestamp = datetime.now().strftime("%d.%m.%Y")
-        total = round(lit * pr, 2)
-        new_row = [timestamp, lit, pr, total, wer]
-        
-        # Sofort lokal speichern
+        new_row = [datetime.now().strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
         st.session_state.tank_data.append(new_row)
-        
-        # Hintergrund-Sync zu Google
-        try:
-            requests.post(SCRIPT_URL, json={"sheet": "tanken", "method": "append", "values": new_row}, timeout=2)
-        except:
-            st.error("Fehler beim Senden an Google Sheets")
+        try: requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"append","values":new_row}, timeout=2)
+        except: pass
         st.rerun()
 
-    if st.session_state.tank_data:
-        df = pd.DataFrame(st.session_state.tank_data, columns=["Datum", "Liter", "CHF/L", "Total", "Wer"])
-        # Formatierung für die Anzeige
-        df["Liter"] = df["Liter"].map(lambda x: f"{float(x):.2f}")
-        df["CHF/L"] = df["CHF/L"].map(lambda x: f"{float(x):.2f}")
-        df["Total"] = df["Total"].map(lambda x: f"{float(x):.2f}")
-        st.table(df)
+    st.markdown("<h4>Letzte Tankstopps</h4>", unsafe_allow_html=True)
+    for i, row in enumerate(reversed(st.session_state.tank_data)):
+        idx = len(st.session_state.tank_data) - 1 - i
+        col_a, col_b = st.columns([4, 1])
+        col_a.write(f"**{row[0]}**: {row[1]}L für {row[3]} CHF ({row[4]})")
+        if col_b.button("🗑️", key=f"del_t_{idx}"):
+            st.session_state.tank_data.pop(idx)
+            st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- SERVICE ---
 elif menu == "⚙️ Service":
+    if os.path.exists("motor.jpg"):
+        st.image("motor.jpg", use_container_width=True)
+
     st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
     arb = st.text_input("Was wurde gemacht?")
-    kost = st.number_input("Kosten CHF", min_value=0.0, step=0.05)
+    kost = st.number_input("Kosten CHF", min_value=0.0)
     
     if st.button("Eintrag speichern"):
         new_row = [datetime.now().strftime("%d.%m.%Y"), arb, kost]
         st.session_state.service_data.append(new_row)
-        try:
-            requests.post(SCRIPT_URL, json={"sheet": "service", "method": "append", "values": new_row}, timeout=2)
-        except:
-            st.error("Fehler beim Senden an Google Sheets")
+        try: requests.post(SCRIPT_URL, json={"sheet":"service","method":"append","values":new_row}, timeout=2)
+        except: pass
         st.rerun()
 
-    if st.session_state.service_data:
-        df_s = pd.DataFrame(st.session_state.service_data, columns=["Datum", "Arbeit", "CHF"])
-        df_s["CHF"] = df_s["CHF"].map(lambda x: f"{float(x):.2f}")
-        st.table(df_s)
+    for i, row in enumerate(reversed(st.session_state.service_data)):
+        idx = len(st.session_state.service_data) - 1 - i
+        col_a, col_b = st.columns([4, 1])
+        col_a.write(f"**{row[0]}**: {row[1]} ({row[2]} CHF)")
+        if col_b.button("🗑️", key=f"del_s_{idx}"):
+            st.session_state.service_data.pop(idx)
+            st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- FINANZEN ---
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Übersicht</h3>", unsafe_allow_html=True)
+    sprit = sum(float(r[3]) for r in st.session_state.tank_data) if st.session_state.tank_data else 0
+    serv = sum(float(r[2]) for r in st.session_state.service_data) if st.session_state.service_data else 0
+    fix = 2200 + 1500 + 350 + 1150 
     
-    sprit = sum(float(row[3]) for row in st.session_state.tank_data) if st.session_state.tank_data else 0
-    serv = sum(float(row[2]) for row in st.session_state.service_data) if st.session_state.service_data else 0
-    fix = 2200 + 1500 + 350 + 1150 # Deine Fixkosten
-    
-    col1, col2 = st.columns(2)
-    col1.metric("FIX + SERVICE", f"CHF {(fix + serv):,.2f}")
-    col2.metric("TOTAL INKL. BENZIN", f"CHF {(fix + serv + sprit):,.2f}")
-    st.info(f"⛽ Benzinanteil bisher: CHF {sprit:,.2f}")
+    st.metric("FIX + SERVICE", f"CHF {(fix + serv):,.2f}")
+    st.metric("TOTAL INKL. BENZIN", f"CHF {(fix + serv + sprit):,.2f}")
+    st.info(f"⛽ Benzinanteil: CHF {sprit:,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
