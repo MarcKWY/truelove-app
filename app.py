@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime
+from datetime import datetime, date
 import os
 
 # --- SETUP & DESIGN ---
@@ -39,7 +39,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- FIXKOSTEN SPEICHERN (Session State) ---
+# --- FIXKOSTEN INITIALISIEREN ---
 if 'fix_überwintern' not in st.session_state: st.session_state.fix_überwintern = 2200.0
 if 'fix_steuern' not in st.session_state: st.session_state.fix_steuern = 350.0
 if 'fix_versicherung' not in st.session_state: st.session_state.fix_versicherung = 1150.0
@@ -67,14 +67,13 @@ if os.path.exists("boot_gross.jpg"):
 
 menu = st.radio("MENU", ["📋 Übersicht", "💰 Finanzen", "⛽ Tanken", "⚙️ Service"], horizontal=True, label_visibility="collapsed")
 
-# Aktuelle Fixkosten berechnen
 fix_total = st.session_state.fix_überwintern + st.session_state.fix_steuern + st.session_state.fix_versicherung + st.session_state.fix_bootsplatz
 sprit_total = sum(float(r[3]) for r in st.session_state.tank_data if len(r) > 3) if st.session_state.tank_data else 0
 service_total = sum(float(r[2]) for r in st.session_state.service_data if len(r) > 2) if st.session_state.service_data else 0
 
 # --- ÜBERSICHT ---
 if menu == "📋 Übersicht":
-    st.markdown("<div class='card'><h3>📋 Gesamtübersicht</h3>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><h3>📋 Gesamtübersicht 2026</h3>", unsafe_allow_html=True)
     grand_total = sprit_total + service_total + fix_total
     st.metric("GESAMTKOSTEN", f"CHF {grand_total:,.2f}")
     
@@ -89,43 +88,38 @@ if menu == "📋 Übersicht":
 # --- FINANZEN ---
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Jährliche Fixkosten</h3>", unsafe_allow_html=True)
-    
-    # Anzeige
     labels = ["❄️ Überwintern", "📑 Steuern", "🛡️ Versicherung", "⚓ Bootsplatz"]
     values = [st.session_state.fix_überwintern, st.session_state.fix_steuern, st.session_state.fix_versicherung, st.session_state.fix_bootsplatz]
-    
     for l, v in zip(labels, values):
         c1, c2 = st.columns(2)
         c1.markdown(f"<span class='white-text'>{l}</span>", unsafe_allow_html=True)
         c2.markdown(f"<span class='white-text'>CHF {v:,.2f}</span>", unsafe_allow_html=True)
-    
     st.divider()
     st.markdown(f"<span class='white-text'>**Total Fixkosten: CHF {fix_total:,.2f}**</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     
-    # Bearbeitungs-Modus
     with st.expander("🛠️ Fixkosten anpassen"):
-        st.session_state.fix_überwintern = st.number_input("Überwintern CHF", value=st.session_state.fix_überwintern, step=50.0)
-        st.session_state.fix_steuern = st.number_input("Steuern CHF", value=st.session_state.fix_steuern, step=10.0)
-        st.session_state.fix_versicherung = st.number_input("Versicherung CHF", value=st.session_state.fix_versicherung, step=10.0)
-        st.session_state.fix_bootsplatz = st.number_input("Bootsplatz CHF", value=st.session_state.fix_bootsplatz, step=50.0)
-        if st.button("Änderungen übernehmen"):
-            st.rerun()
+        st.session_state.fix_überwintern = st.number_input("Überwintern CHF", value=st.session_state.fix_überwintern)
+        st.session_state.fix_steuern = st.number_input("Steuern CHF", value=st.session_state.fix_steuern)
+        st.session_state.fix_versicherung = st.number_input("Versicherung CHF", value=st.session_state.fix_versicherung)
+        st.session_state.fix_bootsplatz = st.number_input("Bootsplatz CHF", value=st.session_state.fix_bootsplatz)
+        if st.button("Speichern"): st.rerun()
 
 # --- TANKEN ---
 elif menu == "⛽ Tanken":
     if os.path.exists("tanken.jpg"):
-        c1, c2, c3 = st.columns([1,2,1])
-        c2.image("tanken.jpg", use_container_width=True)
+        c1, c2, c3 = st.columns(3)
+        c2.image("tanken.jpg", width=300)
     
     st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
+    datum_wahl = st.date_input("Datum wählen", value=date.today(), min_value=date(2026, 1, 1))
     c1, c2 = st.columns(2)
-    lit = c1.number_input("Liter", min_value=0.0, step=0.01, format="%.2f")
-    pr = c2.number_input("CHF/L", value=2.15, format="%.2f")
+    lit = c1.number_input("Liter", min_value=0.0, step=0.01)
+    pr = c2.number_input("CHF/L", value=2.15)
     wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
 
     if st.button("Speichern ✅"):
-        new_row = [datetime.now().strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
+        new_row = [datum_wahl.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
         st.session_state.tank_data.append(new_row)
         try: requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"append","values":new_row}, timeout=2)
         except: pass
@@ -139,15 +133,16 @@ elif menu == "⛽ Tanken":
 # --- SERVICE ---
 elif menu == "⚙️ Service":
     if os.path.exists("motor.jpg"):
-        c1, c2, c3 = st.columns([1,2,1])
-        c2.image("motor.jpg", use_container_width=True)
+        c1, c2, c3 = st.columns(3)
+        c2.image("motor.jpg", width=300)
 
     st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
+    datum_wahl_s = st.date_input("Datum wählen", value=date.today(), min_value=date(2026, 1, 1))
     arb = st.text_input("Was wurde gemacht?")
-    kost = st.number_input("Kosten CHF", min_value=0.0, step=0.05)
+    kost = st.number_input("Kosten CHF", min_value=0.0)
     
     if st.button("Eintrag speichern"):
-        new_row = [datetime.now().strftime("%d.%m.%Y"), arb, kost]
+        new_row = [datum_wahl_s.strftime("%d.%m.%Y"), arb, kost]
         st.session_state.service_data.append(new_row)
         try: requests.post(SCRIPT_URL, json={"sheet":"service","method":"append","values":new_row}, timeout=2)
         except: pass
