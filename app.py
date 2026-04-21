@@ -9,7 +9,6 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 SCRIPT_URL = "https://google.com"
 
-# CSS für Farben und Bildgrössen
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
@@ -40,6 +39,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# --- FIXKOSTEN SPEICHERN (Session State) ---
+if 'fix_überwintern' not in st.session_state: st.session_state.fix_überwintern = 2200.0
+if 'fix_steuern' not in st.session_state: st.session_state.fix_steuern = 350.0
+if 'fix_versicherung' not in st.session_state: st.session_state.fix_versicherung = 1150.0
+if 'fix_bootsplatz' not in st.session_state: st.session_state.fix_bootsplatz = 1500.0
+
 # --- DATEN INITIALISIEREN ---
 if 'tank_data' not in st.session_state:
     try:
@@ -62,18 +67,10 @@ if os.path.exists("boot_gross.jpg"):
 
 menu = st.radio("MENU", ["📋 Übersicht", "💰 Finanzen", "⛽ Tanken", "⚙️ Service"], horizontal=True, label_visibility="collapsed")
 
-# Fixkosten Definition
-fix_kosten = {
-    "❄️ Überwintern": 2200.00,
-    "📑 Steuern": 350.00,
-    "🛡️ Versicherung": 1150.00,
-    "⚓ Bootsplatz": 1500.00
-}
-
-# Berechnungen (Sicher umgewandelt in Zahlen)
+# Aktuelle Fixkosten berechnen
+fix_total = st.session_state.fix_überwintern + st.session_state.fix_steuern + st.session_state.fix_versicherung + st.session_state.fix_bootsplatz
 sprit_total = sum(float(r[3]) for r in st.session_state.tank_data if len(r) > 3) if st.session_state.tank_data else 0
 service_total = sum(float(r[2]) for r in st.session_state.service_data if len(r) > 2) if st.session_state.service_data else 0
-fix_total = sum(fix_kosten.values())
 
 # --- ÜBERSICHT ---
 if menu == "📋 Übersicht":
@@ -92,13 +89,28 @@ if menu == "📋 Übersicht":
 # --- FINANZEN ---
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Jährliche Fixkosten</h3>", unsafe_allow_html=True)
-    for posten, betrag in fix_kosten.items():
-        c1, c2 = st.columns(2) # Fehler behoben: 2 hinzugefügt
-        c1.markdown(f"<span class='white-text'>{posten}</span>", unsafe_allow_html=True)
-        c2.markdown(f"<span class='white-text'>CHF {betrag:,.2f}</span>", unsafe_allow_html=True)
+    
+    # Anzeige
+    labels = ["❄️ Überwintern", "📑 Steuern", "🛡️ Versicherung", "⚓ Bootsplatz"]
+    values = [st.session_state.fix_überwintern, st.session_state.fix_steuern, st.session_state.fix_versicherung, st.session_state.fix_bootsplatz]
+    
+    for l, v in zip(labels, values):
+        c1, c2 = st.columns(2)
+        c1.markdown(f"<span class='white-text'>{l}</span>", unsafe_allow_html=True)
+        c2.markdown(f"<span class='white-text'>CHF {v:,.2f}</span>", unsafe_allow_html=True)
+    
     st.divider()
     st.markdown(f"<span class='white-text'>**Total Fixkosten: CHF {fix_total:,.2f}**</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Bearbeitungs-Modus
+    with st.expander("🛠️ Fixkosten anpassen"):
+        st.session_state.fix_überwintern = st.number_input("Überwintern CHF", value=st.session_state.fix_überwintern, step=50.0)
+        st.session_state.fix_steuern = st.number_input("Steuern CHF", value=st.session_state.fix_steuern, step=10.0)
+        st.session_state.fix_versicherung = st.number_input("Versicherung CHF", value=st.session_state.fix_versicherung, step=10.0)
+        st.session_state.fix_bootsplatz = st.number_input("Bootsplatz CHF", value=st.session_state.fix_bootsplatz, step=50.0)
+        if st.button("Änderungen übernehmen"):
+            st.rerun()
 
 # --- TANKEN ---
 elif menu == "⛽ Tanken":
