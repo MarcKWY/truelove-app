@@ -13,46 +13,30 @@ SCRIPT_URL = "https://google.com"
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    
-    /* Titel Gold */
     .truelove-title { 
         font-family: 'Georgia', serif; font-size: 40px; font-weight: bold; 
         color: #D4AF37; text-align: center; letter-spacing: 5px; margin-bottom: 0px;
     }
-    
-    /* Crownline Untertitel Silber/Weiss */
     .crownline-subtitle { 
         font-family: 'Helvetica Neue', sans-serif; font-size: 16px; 
         text-align: center; color: #E0E0E0; opacity: 0.9; letter-spacing: 3px; margin-bottom: 20px;
     }
-    
     .card { 
         background-color: rgba(255,255,255,0.05); padding: 20px; 
         border-radius: 15px; border: 1px solid #D4AF37; margin-top: 10px; margin-bottom: 20px;
     }
-    
-    /* Farben für Labels und Werte (Silber/Weiss) */
     h3 { color: #D4AF37 !important; }
     .white-text, .stMetric label, [data-testid="stMetricValue"], label, .stMarkdown p { 
         color: #F8F8F8 !important; 
     }
-    
-    /* Goldene Akzente für Menü und wichtige Elemente */
     div[data-testid="stMarkdownContainer"] p strong { color: #D4AF37 !important; }
     .stRadio label { color: #D4AF37 !important; }
-    
-    /* Buttons */
     .stButton>button { 
         background-color: #8B6914 !important; color: white !important; 
         border: 1px solid #D4AF37 !important; width: 100%; border-radius: 10px;
     }
-    
-    /* Tabellen */
     [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
     [data-testid="stTable"] td { color: white !important; }
-
-    /* Bild-Zentrierung */
-    .center-img { display: flex; justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -86,9 +70,9 @@ fix_kosten = {
     "⚓ Bootsplatz": 1500.00
 }
 
-# Berechnungen
-sprit_total = sum(float(r[3]) for r in st.session_state.tank_data) if st.session_state.tank_data else 0
-service_total = sum(float(r[2]) for r in st.session_state.service_data) if st.session_state.service_data else 0
+# Berechnungen (Sicher umgewandelt in Zahlen)
+sprit_total = sum(float(r[3]) for r in st.session_state.tank_data if len(r) > 3) if st.session_state.tank_data else 0
+service_total = sum(float(r[2]) for r in st.session_state.service_data if len(r) > 2) if st.session_state.service_data else 0
 fix_total = sum(fix_kosten.values())
 
 # --- ÜBERSICHT ---
@@ -109,7 +93,7 @@ if menu == "📋 Übersicht":
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Jährliche Fixkosten</h3>", unsafe_allow_html=True)
     for posten, betrag in fix_kosten.items():
-        c1, c2 = st.columns()
+        c1, c2 = st.columns(2) # Fehler behoben: 2 hinzugefügt
         c1.markdown(f"<span class='white-text'>{posten}</span>", unsafe_allow_html=True)
         c2.markdown(f"<span class='white-text'>CHF {betrag:,.2f}</span>", unsafe_allow_html=True)
     st.divider()
@@ -119,8 +103,8 @@ elif menu == "💰 Finanzen":
 # --- TANKEN ---
 elif menu == "⛽ Tanken":
     if os.path.exists("tanken.jpg"):
-        c1, c2, c3 = st.columns([1, 2, 1])
-        c2.image("tanken.jpg", width=300)
+        c1, c2, c3 = st.columns([1,2,1])
+        c2.image("tanken.jpg", use_container_width=True)
     
     st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -143,8 +127,8 @@ elif menu == "⛽ Tanken":
 # --- SERVICE ---
 elif menu == "⚙️ Service":
     if os.path.exists("motor.jpg"):
-        c1, c2, c3 = st.columns([1, 2, 1])
-        c2.image("motor.jpg", width=300)
+        c1, c2, c3 = st.columns([1,2,1])
+        c2.image("motor.jpg", use_container_width=True)
 
     st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
     arb = st.text_input("Was wurde gemacht?")
