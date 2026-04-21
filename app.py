@@ -112,7 +112,7 @@ elif menu == "⛽ Tanken":
         c2.image("tanken.jpg", width=300)
     
     st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
-    datum_wahl = st.date_input("Datum wählen", value=date.today(), min_value=date(2026, 1, 1))
+    datum_wahl = st.date_input("Datum wählen", value=date.today(), format="DD.MM.YYYY")
     c1, c2 = st.columns(2)
     lit = c1.number_input("Liter", min_value=0.0, step=0.01)
     pr = c2.number_input("CHF/L", value=2.15)
@@ -137,7 +137,7 @@ elif menu == "⚙️ Service":
         c2.image("motor.jpg", width=300)
 
     st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
-    datum_wahl_s = st.date_input("Datum wählen", value=date.today(), min_value=date(2026, 1, 1))
+    datum_wahl_s = st.date_input("Datum wählen", value=date.today(), format="DD.MM.YYYY")
     arb = st.text_input("Was wurde gemacht?")
     kost = st.number_input("Kosten CHF", min_value=0.0)
     
