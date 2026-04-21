@@ -9,9 +9,12 @@ st.set_page_config(page_title="Truelove Master", layout="centered")
 
 SCRIPT_URL = "https://google.com"
 
+# Erweitertes CSS für goldene Schriftfarben und kleinere Bilder
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
+    
+    /* Titel & Subtitel */
     .truelove-title { 
         font-family: 'Georgia', serif; font-size: 40px; font-weight: bold; 
         color: #D4AF37; text-align: center; letter-spacing: 5px; margin-bottom: 0px;
@@ -20,12 +23,28 @@ st.markdown("""
         font-family: 'Helvetica Neue', sans-serif; font-size: 16px; 
         text-align: center; color: #FFFFFF; opacity: 0.8; letter-spacing: 3px; margin-bottom: 20px;
     }
+    
+    /* Karten-Design */
     .card { 
         background-color: rgba(255,255,255,0.05); padding: 20px; 
         border-radius: 15px; border: 1px solid #D4AF37; margin-top: 10px; margin-bottom: 20px;
     }
-    h3 { color: #D4AF37 !important; }
+    
+    /* GOLDENE SCHRIFT FÜR ÜBERSCHRIFTEN & LABELS */
+    h3, h4, label, .stMarkdown p { color: #D4AF37 !important; }
+    
+    /* Speziell für Radio Buttons (Marc, Fabienne, Menü) */
+    div[data-testid="stMarkdownContainer"] p { color: #D4AF37 !important; font-weight: bold; }
+    .stRadio label { color: #D4AF37 !important; }
+    
+    /* Metriken (Zahlen in der Übersicht) */
     .stMetric label { color: #D4AF37 !important; font-weight: bold !important; }
+    [data-testid="stMetricValue"] { color: #FFFFFF !important; }
+
+    /* Eingabefelder */
+    input { color: #D4AF37 !important; }
+    
+    /* Buttons */
     .stButton>button { 
         background-color: #8B6914 !important; color: white !important; 
         border: 1px solid #D4AF37 !important; width: 100%; border-radius: 10px;
@@ -34,8 +53,14 @@ st.markdown("""
         background-color: #441111 !important; border: 1px solid #ff4b4b !important;
         color: white !important; width: auto !important;
     }
+    
+    /* Tabellen */
     [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
     [data-testid="stTable"] td { color: white !important; }
+
+    /* Bild-Verkleinerung */
+    .small-img { display: flex; justify-content: center; }
+    .small-img img { width: 150px !important; border-radius: 10px; border: 1px solid #D4AF37; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -56,6 +81,7 @@ if 'service_data' not in st.session_state:
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
+# Hauptbild (Gross)
 if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
@@ -69,7 +95,7 @@ fix_kosten = {
     "⚓ Bootsplatz": 1500.00
 }
 
-# Berechnungen für alle Bereiche
+# Berechnungen
 sprit_total = sum(float(r[3]) for r in st.session_state.tank_data) if st.session_state.tank_data else 0
 service_total = sum(float(r[2]) for r in st.session_state.service_data) if st.session_state.service_data else 0
 fix_total = sum(fix_kosten.values())
@@ -78,35 +104,38 @@ fix_total = sum(fix_kosten.values())
 if menu == "📋 Übersicht":
     st.markdown("<div class='card'><h3>📋 Gesamtübersicht</h3>", unsafe_allow_html=True)
     grand_total = sprit_total + service_total + fix_total
-    
     st.metric("GESAMTKOSTEN", f"CHF {grand_total:,.2f}")
     
     col1, col2 = st.columns(2)
-    col1.write(f"⛽ Benzin: **CHF {sprit_total:,.2f}**")
-    col1.write(f"⚙️ Service: **CHF {service_total:,.2f}**")
-    col2.write(f"🏗️ Fixkosten: **CHF {fix_total:,.2f}**")
-    
-    st.progress(min(sprit_total / max(grand_total, 1), 1.0))
+    with col1:
+        st.write(f"⛽ Benzin: **CHF {sprit_total:,.2f}**")
+        st.write(f"⚙️ Service: **CHF {service_total:,.2f}**")
+    with col2:
+        st.write(f"🏗️ Fixkosten: **CHF {fix_total:,.2f}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- FINANZEN ---
 elif menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Jährliche Fixkosten</h3>", unsafe_allow_html=True)
     for posten, betrag in fix_kosten.items():
-        c1, c2 = st.columns([2, 1])
+        c1, c2 = st.columns([2,1])
         c1.write(posten)
         c2.write(f"CHF {betrag:,.2f}")
     st.divider()
-    st.write(f"**Total Fixkosten: CHF {fix_total:,.2f}**")
+    st.markdown(f"**Total Fixkosten: CHF {fix_total:,.2f}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- TANKEN ---
 elif menu == "⛽ Tanken":
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", use_container_width=True)
+    # Kleines Bild zentriert
+    if os.path.exists("tanken.jpg"):
+        col_img1, col_img2, col_img3 = st.columns([1,1,1])
+        col_img2.image("tanken.jpg", width=150)
+    
     st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
-    lit = c1.number_input("Liter", min_value=0.0, step=0.01)
-    pr = c2.number_input("CHF/L", value=2.15)
+    lit = c1.number_input("Liter", min_value=0.0, step=0.01, format="%.2f")
+    pr = c2.number_input("CHF/L", value=2.15, format="%.2f")
     wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
 
     if st.button("Speichern ✅"):
@@ -128,10 +157,14 @@ elif menu == "⛽ Tanken":
 
 # --- SERVICE ---
 elif menu == "⚙️ Service":
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", use_container_width=True)
+    # Kleines Bild zentriert
+    if os.path.exists("motor.jpg"):
+        col_img1, col_img2, col_img3 = st.columns([1,1,1])
+        col_img2.image("motor.jpg", width=150)
+
     st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
     arb = st.text_input("Was wurde gemacht?")
-    kost = st.number_input("Kosten CHF", min_value=0.0)
+    kost = st.number_input("Kosten CHF", min_value=0.0, step=0.05)
     
     if st.button("Eintrag speichern"):
         new_row = [datetime.now().strftime("%d.%m.%Y"), arb, kost]
@@ -146,6 +179,6 @@ elif menu == "⚙️ Service":
         st.table(df_s)
         with st.expander("Einträge löschen"):
             for i, row in enumerate(st.session_state.service_data):
-                if st.button(f"🗑️ {row[1]}", key=f"del_s_{i}"):
+                if st.button(f"🗑️ {row[0]} - {row[1]}", key=f"del_s_{i}"):
                     st.session_state.service_data.pop(i)
                     st.rerun()
