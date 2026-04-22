@@ -31,15 +31,15 @@ st.markdown("""
     /* Metric und normale Texte auf WEISS */
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
     
-    /* Dropdown-Texte beim Auswählen schwarz für Lesbarkeit */
+    /* Dropdown-Texte beim Auswählen schwarz */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
 
     /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* RADIKALE LÖSUNG FÜR ALLE SPEICHER-BUTTONS (Inkl. Forms) */
-    button[kind="primaryFormSubmit"], button[kind="secondary"], .stButton > button {
+    /* ALLE SPEICHER-BUTTONS IN GOLD (Inklusive Form-Buttons für Tanken/Service) */
+    .stButton > button, button[kind="primaryFormSubmit"] {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
         font-weight: bold !important;
@@ -49,13 +49,14 @@ st.markdown("""
         border: none !important;
     }
     
-    /* NUR Lösch-Buttons bleiben dezent rot */
+    /* NUR Lösch-Buttons bleiben dezent rot umrandet */
     .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
         height: 2.2em !important;
         width: auto !important;
+        font-size: 11px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -100,7 +101,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 # --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    # FEHLER GEFIXT: Komma entfernt
     sel_y = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
     
     sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
@@ -145,10 +145,10 @@ with tab2:
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
+    n_ü = st.number_input("Überwintern", value=v[0], step=50.0, format="%.2f")
+    n_s = st.number_input("Steuern", value=v[1], step=10.0, format="%.2f")
+    n_v = st.number_input("Versicherung", value=v[2], step=10.0, format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=v[3], step=50.0, format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
