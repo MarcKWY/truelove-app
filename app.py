@@ -12,14 +12,14 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    /* GitHub Header & Toolbar dunkel färben */
-    header[data-testid="stHeader"] { background-color: #050A14 !important; color: #050A14 !important; }
-    footer {visibility: hidden;}
+    /* GitHub-Header, Katzen-Logo und Toolbar komplett ausblenden/dunkel machen */
+    header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
+        visibility: hidden !important; 
+        height: 0px !important; 
+    }
+    footer { visibility: hidden; }
     
-    /* Alles auf Dunkelblau/Weiss setzen */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
-    
-    /* TITEL IN GOLD */
     .truelove-title { 
         font-family: 'Georgia', serif; 
         font-size: 34px; 
@@ -28,17 +28,11 @@ st.markdown("""
         text-align: center; 
         margin-bottom: 0px; 
     }
-    
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
-    
-    /* Metriken und Texte */
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
-    
-    /* Dropdown Lesbarkeit */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
-
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
     /* BUTTONS IN GOLD */
@@ -53,8 +47,6 @@ st.markdown("""
         height: 3.5em !important;
         border: none !important;
     }
-    
-    /* Lösch-Buttons */
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
@@ -84,10 +76,12 @@ if 'tank_data' not in st.session_state:
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
+
+# Fixkosten robust laden
 if 'fix_vals' not in st.session_state:
-    raw = load_all_data("fixkosten")
-    if len(raw) > 0:
-        try: st.session_state.fix_vals = [safe_float(x) for x in raw[0][:4]]
+    raw_fix = load_all_data("fixkosten")
+    if raw_fix and len(raw_fix) > 0:
+        try: st.session_state.fix_vals = [safe_float(x) for x in raw_fix[0][:4]]
         except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
     else:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
@@ -132,7 +126,7 @@ with tab2:
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
         st.markdown("### ⛽ Neuer Tankstopp")
-        # Deutsch-Format für das Widget
+        # Hier wird das Datum im Widget DEUTSCH angezeigt (DD.MM.YYYY)
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         lit = st.number_input("Liter", step=0.1, format="%.2f")
         pr = st.number_input("CHF/L", value=2.15, format="%.2f")
@@ -146,6 +140,7 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
+        # Anzeige der Historie erzwingt deutsches Format
         c1.markdown(f"📅 {r[0]} | {safe_float(r[1]):.2f}L | <span class='gold-price'>CHF {safe_float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
@@ -154,14 +149,19 @@ with tab2:
 # --- 💰 FINANZEN ---
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
+    # WICHTIG: Die Werte werden direkt aus dem Session State geladen
     v = st.session_state.fix_vals
     n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
     n_s = st.number_input("Steuern", value=v[1], format="%.2f")
     n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
-    if st.button("EINTRAG SPEICHERN"):
-        fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
-        st.success("Fixkosten aktualisiert!")
+    
+    if st.button("ÄNDERUNGEN SPEICHERN"):
+        new_fix = [n_ü, n_s, n_v, n_b]
+        fast_sync({"sheet":"fixkosten","method":"update","values":new_fix}, "fix_vals", "update")
+        st.success("Erfolgreich gespeichert!")
+        st.rerun() # Sorgt dafür, dass die Werte sofort fixiert werden
+        
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
