@@ -8,24 +8,35 @@ import os
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
 # DEINE FESTE URL
-SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec"
+SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec
+
+"
 
 st.markdown("""
     <style>
     /* Grund-Design: Alles auf WEISS setzen */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     
-    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; margin-bottom: 0px; }
+    /* TITEL WIEDER IN GOLD */
+    .truelove-title { 
+        font-family: 'Georgia', serif; 
+        font-size: 34px; 
+        font-weight: bold; 
+        color: #D4AF37 !important; 
+        text-align: center; 
+        margin-bottom: 0px; 
+    }
+    
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
-    /* Grosse Metric-Zahl auf WEISS erzwingen */
+    /* Grosse Metric-Zahl auf WEISS */
     [data-testid="stMetricValue"] { color: #FFFFFF !important; }
     
-    /* GOLD nur für die spezifischen CHF-Beträge in der Historie */
+    /* GOLD nur für die CHF-Beträge in der Historie & Akzente */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* Alles andere WEISS erzwingen (Radio-Buttons, Namen, Labels) */
+    /* Alles andere WEISS (Radio-Buttons, Namen, Labels) */
     label, p, span, div, .stMarkdown p, .stRadio label, div[data-baseweb="radio"] div { 
         color: #FFFFFF !important; 
     }
@@ -41,8 +52,8 @@ st.markdown("""
         font-weight: bold !important;
         width: 100%;
         border-radius: 10px;
-        height: 3.5em;
         border: none;
+        height: 3.5em;
     }
     
     /* Lösch-Button */
@@ -66,7 +77,7 @@ if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
-    raw = load_data = load_all_data("service")
+    raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
