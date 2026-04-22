@@ -18,53 +18,56 @@ st.markdown("""
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     .gold-text { color: #D4AF37 !important; font-weight: bold; }
     
-    /* Goldene Eingabe-Buttons */
+    /* Goldener Haupt-Button */
     div.stButton > button:first-child {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
         font-weight: bold !important;
         width: 100%;
         border-radius: 10px;
+        height: 3.5em;
     }
     
-    /* Kleinerer Lösch-Button */
+    /* Roter Lösch-Button */
     .stButton > button[key^="del"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
+        font-size: 11px !important;
         padding: 2px 5px !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNKTIONEN ---
-@st.cache_data(ttl=60) # Schnellerer Cache für bessere Performance
-def fetch_data(sheet):
+# --- SPEED-FUNKTIONEN ---
+@st.cache_data(ttl=300)
+def get_all_data():
+    """Lädt alle Daten gesammelt für maximalen Speed"""
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=15)
-        return r.json()
+        t = requests.get(f"{SCRIPT_URL}?sheet=tanken", timeout=15).json()
+        s = requests.get(f"{SCRIPT_URL}?sheet=service", timeout=15).json()
+        f = requests.get(f"{SCRIPT_URL}?sheet=fixkosten", timeout=15).json()
+        return t, s, f
     except:
-        return []
+        return [], [], []
 
 def send_request(payload):
     try:
-        with st.spinner('Verarbeite...'):
+        with st.spinner('Synchronisiere...'):
             requests.post(SCRIPT_URL, json=payload, timeout=15)
             st.cache_data.clear()
             st.rerun()
     except:
         st.error("Verbindung zu Google fehlgeschlagen.")
 
-# --- DATEN LADEN ---
-raw_tank = fetch_data("tanken")
-tank_list = raw_tank[1:] if len(raw_tank) > 1 else []
+# --- DATEN INITIALISIEREN ---
+t_raw, s_raw, f_raw = get_all_data()
 
-raw_serv = fetch_data("service")
-serv_list = raw_serv[1:] if len(raw_serv) > 1 else []
+tank_list = t_raw[1:] if len(t_raw) > 1 else []
+serv_list = s_raw[1:] if len(s_raw) > 1 else []
 
-raw_fix = fetch_data("fixkosten")
-if len(raw_fix) > 1:
-    f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
+if len(f_raw) > 1:
+    f_ü, f_s, f_v, f_b = map(float, f_raw[1][:4])
 else:
     f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
 
@@ -86,47 +89,41 @@ with tab1:
     
     sprit = sum(float(r[3]) for r in tank_list if len(r) > 3 and y_str in str(r[0]))
     serv = sum(float(r[2]) for r in serv_list if len(r) > 2 and y_str in str(r[0]))
-    fix = f_ü + f_s + f_v + f_b
     
-    # Wer hat wie viel bezahlt (Tanken)
-    marc_t = sum(float(r[3]) for r in tank_list if len(r) > 4 and r[4] == "Marc" and y_str in str(r[0]))
-    fabi_t = sum(float(r[3]) for r in tank_list if len(r) > 4 and r[4] == "Fabienne" and y_str in str(r[0]))
-
-    st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + fix):,.2f}")
+    m_t = sum(float(r[3]) for r in tank_list if len(r) > 4 and r[4] == "Marc" and y_str in str(r[0]))
+    f_t = sum(float(r[3]) for r in tank_list if len(r) > 4 and r[4] == "Fabienne" and y_str in str(r[0]))
     
-    col_m, col_f = st.columns(2)
-    col_m.markdown(f"🧔 **Marc:**<br><span style='color:#D4AF37; font-size:18px;'>CHF {marc_t:,.2f}</span>", unsafe_allow_html=True)
-    col_f.markdown(f"👩 **Fabienne:**<br><span style='color:#FF69B4; font-size:18px;'>CHF {fabi_t:,.2f}</span>", unsafe_allow_html=True)
+    st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + f_ü + f_s + f_v + f_b):,.2f}")
+    
+    c_m, c_f = st.columns(2)
+    c_m.markdown(f"🧔 **Marc:**<br><span style='color:#D4AF37; font-size:20px;'>CHF {m_t:,.2f}</span>", unsafe_allow_html=True)
+    c_f.markdown(f"👩 **Fabienne:**<br><span style='color:#FF69B4; font-size:20px;'>CHF {f_t:,.2f}</span>", unsafe_allow_html=True)
     
     st.divider()
-    st.markdown(f"⛽ Benzin: <span class='gold-text'>CHF {sprit:,.2f}</span><br>⚙️ Service: <span class='gold-text'>CHF {serv:,.2f}</span><br>🏗️ Fixkosten: <span class='gold-text'>CHF {fix:,.2f}</span>", unsafe_allow_html=True)
+    st.markdown(f"⛽ Benzin: <span class='gold-text'>CHF {sprit:,.2f}</span><br>⚙️ Service: <span class='gold-text'>CHF {serv:,.2f}</span><br>🏗️ Fixkosten: <span class='gold-text'>CHF {(f_ü + f_s + f_v + f_b):,.2f}</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⛽ TANKEN ---
 with tab2:
-    if os.path.exists("tanken.jpg"): 
-        st.image("tanken.jpg", width=250)
     with st.form("tank_form"):
+        st.markdown("### ⛽ Neuer Eintrag")
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
-        lit = st.number_input("Liter", min_value=0.0, format="%.2f")
-        pr = st.number_input("CHF/L", value=2.15, format="%.2f")
+        c1, c2 = st.columns(2)
+        lit = c1.number_input("Liter", min_value=0.0, format="%.2f")
+        pr = c2.number_input("CHF/L", value=2.15, format="%.2f")
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
-        if st.form_submit_button("Eintrag Speichern"):
+        if st.form_submit_button("JETZT SPEICHERN"):
             send_request({"sheet":"tanken","method":"append","values":[d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]})
     
     st.markdown("### 📜 Historie")
-    if tank_list:
-        for i, r in enumerate(reversed(tank_list)):
-            with st.container():
-                c1, c2 = st.columns([0.85, 0.15])
-                # Farbe basierend auf Zahler
-                p_color = "#D4AF37" if r[4] == "Marc" else "#FF69B4"
-                c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** | <span style='color:{p_color}; font-weight:bold;'>{r[4]}</span>", unsafe_allow_html=True)
-                if c2.button("🗑️", key=f"del_t_{i}"):
-                    send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
-                st.divider()
-    else:
-        st.info("Keine Tankdaten vorhanden.")
+    for i, r in enumerate(reversed(tank_list)):
+        with st.container():
+            col_txt, col_del = st.columns([0.85, 0.15])
+            p_color = "#D4AF37" if r[4] == "Marc" else "#FF69B4"
+            col_txt.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** | <span style='color:{p_color}; font-weight:bold;'>{r[4]}</span>", unsafe_allow_html=True)
+            if col_del.button("🗑️", key=f"del_t_{i}"):
+                send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
+            st.divider()
 
 # --- 💰 FINANZEN ---
 with tab3:
@@ -135,29 +132,25 @@ with tab3:
     n_s = st.number_input("Steuern", value=f_s, format="%.2f")
     n_v = st.number_input("Versicherung", value=f_v, format="%.2f")
     n_b = st.number_input("Bootsplatz", value=f_b, format="%.2f")
-    if st.button("Fixkosten aktualisieren"):
-        send_request({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]})
+    if st.button("FIXKOSTEN AKTUALISIEREN"):
+        send_request({"sheet":"fixkosten","update":"update","values":[n_ü, n_s, n_v, n_b]})
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⚙️ SERVICE ---
 with tab4:
-    if os.path.exists("motor.jpg"): 
-        st.image("motor.jpg", width=250)
     with st.form("serv_form"):
+        st.markdown("### ⚙️ Service-Eintrag")
         d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         arb = st.text_input("Was wurde gemacht?")
         kost = st.number_input("Kosten CHF", min_value=0.0, format="%.2f")
-        if st.form_submit_button("Service Speichern"):
+        if st.form_submit_button("SERVICE SPEICHERN"):
             send_request({"sheet":"service","method":"append","values":[d_s.strftime("%d.%m.%Y"), arb, kost]})
     
     st.markdown("### 📜 Historie")
-    if serv_list:
-        for i, r in enumerate(reversed(serv_list)):
-            with st.container():
-                c1, c2 = st.columns([0.85, 0.15])
-                c1.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
-                if c2.button("🗑️", key=f"del_s_{i}"):
-                    send_request({"sheet":"service","method":"delete","index": len(serv_list)-1-i})
-                st.divider()
-    else:
-        st.info("Keine Servicedaten vorhanden.")
+    for i, r in enumerate(reversed(serv_list)):
+        with st.container():
+            col_txt, col_del = st.columns([0.85, 0.15])
+            col_txt.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
+            if col_del.button("🗑️", key=f"del_s_{i}"):
+                send_request({"sheet":"service","method":"delete","index": len(serv_list)-1-i})
+            st.divider()
