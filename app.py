@@ -9,7 +9,6 @@ st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="â
 
 # DEINE FESTE URL
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec"
-
 st.markdown("""
     <style>
     /* Grund-Design: Alles auf WEISS setzen */
