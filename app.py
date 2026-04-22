@@ -12,18 +12,11 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    /* HEADER & GITHUB ICON VERSTECKEN */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
-    div[data-testid="stStatusWidget"] {visibility: hidden;}
     .stAppDeployButton {display:none;}
-    
-    /* Falls ein kleiner Rest bleibt, diesen dunkel färben */
-    [data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0);
-        color: rgba(0,0,0,0);
-    }
+    [data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
 
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
@@ -34,7 +27,6 @@ st.markdown("""
     div[data-baseweb="popover"] * { color: #000000 !important; }
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
 
-    /* Button-Design Gold */
     .stApp div[data-testid="stForm"] button, 
     .stApp button[kind="secondary"], 
     .stApp button[kind="primaryFormSubmit"] {
@@ -46,18 +38,14 @@ st.markdown("""
         height: 3.5em !important;
         border: none !important;
     }
-    
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
-        height: auto !important;
-        width: auto !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATUM-KONVERTIERUNG ---
 def format_date_german(d_str):
     try:
         if "T" in str(d_str): d_str = str(d_str).split("T")[0]
@@ -67,7 +55,6 @@ def format_date_german(d_str):
         return str(d_str)
     except: return str(d_str)
 
-# --- DATEN-LOGIK ---
 @st.cache_data(ttl=60)
 def load_all_data(sheet):
     try:
@@ -75,22 +62,21 @@ def load_all_data(sheet):
         return r.json()
     except: return []
 
+# Daten initialisieren
 if 'tank_data' not in st.session_state:
-    raw = load_all_data("tanken")
-    st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
-
+    st.session_state.tank_data = load_all_data("tanken")[1:]
 if 'serv_data' not in st.session_state:
-    raw = load_all_data("service")
-    st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
+    st.session_state.serv_data = load_all_data("service")[1:]
 
+# FIXKOSTEN - SICHERES LADEN
 if 'fix_vals' not in st.session_state:
-    raw = load_all_data("fixkosten")
-    try:
-        if raw and len(raw) > 0:
-            st.session_state.fix_vals = [float(x) for x in raw[:4]]
-        else:
+    raw_fix = load_all_data("fixkosten")
+    if raw_fix and len(raw_fix) >= 4:
+        try:
+            st.session_state.fix_vals = [float(x) for x in raw_fix[:4]]
+        except:
             st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-    except:
+    else:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
 def fast_sync(payload, local_key, action="append", idx=None):
@@ -101,14 +87,12 @@ def fast_sync(payload, local_key, action="append", idx=None):
     except: pass
     st.cache_data.clear()
 
-# --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
 
 tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
 
-# --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     sel_y = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
@@ -124,7 +108,6 @@ with tab1:
     st.markdown(f"⛽ Benzin: <span class='gold-price'>CHF {sprit:,.2f}</span> | ⚙️ Service: <span class='gold-price'>CHF {serv:,.2f}</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ⛽ TANKEN ---
 with tab2:
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
@@ -147,7 +130,6 @@ with tab2:
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
             st.rerun()
 
-# --- 💰 FINANZEN ---
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
@@ -155,13 +137,12 @@ with tab3:
     n_s = st.number_input("Steuern", value=v[1], format="%.2f")
     n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
-    if st.button("EINTRAG SPEICHERN"):
+    if st.button("EINTRAG SPEICHERN", key="btn_fix"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
         st.success("Gespeichert!")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ⚙️ SERVICE ---
 with tab4:
     if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
     with st.form("s_form", clear_on_submit=True):
