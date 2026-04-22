@@ -14,10 +14,7 @@ st.markdown("""
     header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { display: none !important; }
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; }
-    .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
-    .gold-price { color: #D4AF37 !important; font-weight: bold; }
-    .stApp button { background-color: #D4AF37 !important; color: #050A14 !important; font-weight: bold !important; width: 100% !important; border-radius: 10px !important; }
-    </style>
+    .card { back
     """, unsafe_allow_html=True)
 
 # --- DATEN-LOGIK ---
