@@ -32,32 +32,34 @@ def safe_float(val):
     try: return float(str(val).replace('CHF', '').replace("'", "").strip())
     except: return 0.0
 
-def clean_date(val):
-    return str(val).split('T')[0].split(' ')[0]
+def clean_date_str(val):
+    # Schneidet Uhrzeiten ab (nimmt nur den Teil vor dem T oder Leerzeichen)
+    s = str(val).replace('T', ' ').split(' ')
+    return s[0]
 
 def load_data_fresh(sheet):
-    """ Lädt Daten IMMER frisch ohne Cache """
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=15)
+        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
         return r.json()
-    except: return []
+    except:
+        return []
 
-# --- DATEN INITIALISIEREN (OHNE CACHE FÜR FIXKOSTEN) ---
+# --- DATEN INITIALISIEREN ---
+# Wir laden die Fixkosten VOR den Tabs, damit sie überall verfügbar sind
+if 'fix_vals' not in st.session_state:
+    raw_fix = load_data_fresh("fixkosten")
+    if raw_fix and len(raw_fix) >= 4:
+        st.session_state.fix_vals = [safe_float(x) for x in raw_fix[:4]]
+    else:
+        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+
 if 'tank_data' not in st.session_state:
-    raw_tank = load_data_fresh("tanken")
-    st.session_state.tank_data = raw_tank[1:] if len(raw_tank) > 1 else []
+    raw_t = load_data_fresh("tanken")
+    st.session_state.tank_data = raw_t[1:] if len(raw_t) > 1 else []
 
 if 'serv_data' not in st.session_state:
-    raw_serv = load_data_fresh("service")
-    st.session_state.serv_data = raw_serv[1:] if len(raw_serv) > 1 else []
-
-# FIXKOSTEN IMMER FRISCH LADEN BEIM START/RELOAD
-raw_fix = load_data_fresh("fixkosten")
-if raw_fix and len(raw_fix) > 0:
-    st.session_state.fix_vals = [safe_float(x) for x in raw_fix[:4]]
-else:
-    if 'fix_vals' not in st.session_state:
-        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+    raw_s = load_data_fresh("service")
+    st.session_state.serv_data = raw_s[1:] if len(raw_s) > 1 else []
 
 # --- UI ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
@@ -68,15 +70,15 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    sel_y = st.selectbox("Jahr wählen", [2026, 2027, 2028, 2029], index=0)
+    sel_y = st.selectbox("Jahr wählen", ["2026", "2027", "2028", "2029"], index=0)
     
-    sprit = sum(safe_float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in clean_date(r[0]))
-    serv = sum(safe_float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in clean_date(r[0]))
-    fix_s = sum(st.session_state.fix_vals)
+    sprit = sum(safe_float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in clean_date_str(r[0]))
+    serv = sum(safe_float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in clean_date_str(r[0]))
+    fix_sum = sum(st.session_state.fix_vals)
     
-    st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_s):,.2f}")
-    st.write(f"🧔 Marc: CHF {sum(safe_float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=='Marc' and str(sel_y) in clean_date(r[0])):,.2f}")
-    st.write(f"👩 Fabienne: CHF {sum(safe_float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=='Fabienne' and str(sel_y) in clean_date(r[0])):,.2f}")
+    st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
+    st.write(f"🧔 Marc: CHF {sum(safe_float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=='Marc' and str(sel_y) in clean_date_str(r[0])):,.2f}")
+    st.write(f"👩 Fabienne: CHF {sum(safe_float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=='Fabienne' and str(sel_y) in clean_date_str(r[0])):,.2f}")
     st.divider()
     st.markdown(f"⛽ Benzin: <span class='gold-price'>CHF {sprit:,.2f}</span> | ⚙️ Service: <span class='gold-price'>CHF {serv:,.2f}</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -97,7 +99,7 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {clean_date(r[0])} | {safe_float(r[1]):.2f}L | <span class='gold-price'>CHF {safe_float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
+        c1.markdown(f"📅 {clean_date_str(r[0])} | {safe_float(r[1]):.2f}L | <span class='gold-price'>CHF {safe_float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"delete","index":idx})
             st.session_state.tank_data.pop(idx)
@@ -105,18 +107,19 @@ with tab2:
 
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
-    v = st.session_state.fix_vals
+    # SICHERE INITIALISIERUNG DER WERTE
+    v = st.session_state.fix_vals if len(st.session_state.fix_vals) >= 4 else [0.0, 0.0, 0.0, 0.0]
+    
     n_ü = st.number_input("Überwintern", value=v[0])
     n_s = st.number_input("Steuern", value=v[1])
     n_v = st.number_input("Versicherung", value=v[2])
     n_b = st.number_input("Bootsplatz", value=v[3])
+    
     if st.button("FIXKOSTEN SPEICHERN"):
         new_v = [n_ü, n_s, n_v, n_b]
-        # Sofortiger Post an Google
         requests.post(SCRIPT_URL, json={"sheet":"fixkosten","method":"update","values":new_v})
-        # Sofortiges Update im lokalen Speicher
         st.session_state.fix_vals = new_v
-        st.success("Erfolgreich in Google Sheets gespeichert!")
+        st.success("Gespeichert!")
         st.rerun()
     st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -136,7 +139,7 @@ with tab4:
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {clean_date(r[0])} | {r[1]} | <span class='gold-price'>CHF {safe_float(r[2]):,.2f}</span>", unsafe_allow_html=True)
+        c1.markdown(f"📅 {clean_date_str(r[0])} | {r[1]} | <span class='gold-price'>CHF {safe_float(r[2]):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
             requests.post(SCRIPT_URL, json={"sheet":"service","method":"delete","index":idx})
             st.session_state.serv_data.pop(idx)
