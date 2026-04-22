@@ -12,14 +12,27 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    .stApp { background-color: #050A14; color: #FFFFFF; }
+    /* Hintergrund und Standard-Schrift (Helles Weiss statt Silber) */
+    .stApp { background-color: #050A14; color: #F0F2F6; }
+    
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; margin-bottom: 0px; }
-    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.8; letter-spacing: 2px; margin-bottom: 15px; }
+    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
     /* Goldene Schrift für CHF Beträge */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
+    /* Beschriftungen (Labels, "Zahler", "Jahr wählen" etc.) in lesbarem Gold/Weiss */
+    label, .stMarkdown p, .stSelectbox label, .stRadio label { 
+        color: #D4AF37 !important; 
+        font-weight: 500 !important;
+        font-size: 16px !important;
+    }
+
+    /* Tab-Texte verbessern */
+    .stTabs [data-baseweb="tab"] { color: #FFFFFF !important; }
+    .stTabs [aria-selected="true"] { color: #D4AF37 !important; font-weight: bold; }
+
     /* Goldener Speicher-Button mit schwarzer Schrift */
     div.stButton > button:first-child {
         background-color: #D4AF37 !important;
@@ -49,7 +62,6 @@ def load_all_data(sheet):
         return r.json()
     except: return []
 
-# Daten in den Session State laden
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
@@ -107,7 +119,6 @@ with tab2:
         st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
         st.markdown("### ⛽ Neuer Tankstopp")
-        # Deutsche Anzeige für das Auswahlfeld
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         lit = st.number_input("Liter", step=0.1, format="%.2f")
         pr = st.number_input("CHF/L", value=2.15, format="%.2f")
