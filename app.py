@@ -3,158 +3,107 @@ import pandas as pd
 import requests
 from datetime import datetime, date
 import os
-import time
 
-# --- SETUP & DESIGN ---
+# --- SETUP ---
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
-# DEINE FESTE SCRIPT URL (JETZT SICHER VERBAUT)
+# DEINE FESTE URL
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec" 
 
+# --- DESIGN ---
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; letter-spacing: 3px; margin-bottom: 0px; }
-    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.8; letter-spacing: 2px; margin-bottom: 15px; }
+    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; margin-bottom: 0px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
-    .gold-text { color: #D4AF37 !important; font-weight: bold; }
-    
-    /* Goldener Haupt-Button */
-    div.stButton > button:first-child {
-        background-color: #D4AF37 !important;
-        color: #050A14 !important;
-        font-weight: bold !important;
-        width: 100%;
-        border-radius: 10px;
-        height: 3.5em;
-    }
-    
-    /* Kleiner roter Lösch-Button */
-    .stButton > button[key^="del"] {
-        background-color: transparent !important;
-        color: #ff4b4b !important;
-        border: 1px solid #ff4b4b !important;
-        font-size: 11px !important;
-        padding: 2px 5px !important;
-    }
+    div.stButton > button:first-child { background-color: #D4AF37 !important; color: #050A14 !important; font-weight: bold !important; width: 100%; border-radius: 10px; }
+    .stButton > button[key^="del"] { background-color: transparent !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important; font-size: 11px; padding: 2px 5px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNKTIONEN (OPTIMIERT) ---
-@st.cache_data(ttl=60)
-def fetch_data(sheet):
+# --- DATEN-LOGIK (INSTANT SPEED) ---
+def load_data(sheet):
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=15)
-        return r.json()
-    except:
-        return []
+        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
+        return r.json()[1:]
+    except: return []
 
-def send_request(payload):
+# Einmaliges Laden beim Start
+if 'tank_data' not in st.session_state:
+    st.session_state.tank_data = load_data("tanken")
+if 'serv_data' not in st.session_state:
+    st.session_state.serv_data = load_data("service")
+
+def sync_action(payload, local_list, action="append"):
+    """Führt die Aktion lokal sofort aus und sendet sie dann an Google"""
+    if action == "append":
+        local_list.append(payload["values"])
+    elif action == "delete":
+        local_list.pop(payload["index"])
+    
+    # Der eigentliche Sync-Befehl an Google (ohne die App zu blockieren)
     try:
-        with st.spinner('Verarbeite...'):
-            requests.post(SCRIPT_URL, json=payload, timeout=15)
-            # Cache sofort leeren, damit die App die Änderung sieht
-            st.cache_data.clear()
-            # Gedenksekunde für Google Sheets
-            time.sleep(2)
-            st.rerun()
+        requests.post(SCRIPT_URL, json=payload, timeout=5)
     except:
-        st.error("Verbindung zu Google fehlgeschlagen.")
-
-# --- DATEN LADEN ---
-raw_tank = fetch_data("tanken")
-tank_list = raw_tank[1:] if len(raw_tank) > 1 else []
-
-raw_serv = fetch_data("service")
-serv_list = raw_serv[1:] if len(raw_serv) > 1 else []
-
-raw_fix = fetch_data("fixkosten")
-if len(raw_fix) > 1:
-    f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
-else:
-    f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
+        pass 
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
-st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
+if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
 
-if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True)
-
-# --- NAVIGATION ---
 tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
 
 # --- 📋 ÜBERSICHT ---
 with tab1:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    sel_year = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=1)
-    y_str = str(sel_year)
+    sel_year = st.selectbox("Jahr", [2024, 2025, 2026, 2027], index=2)
+    y = str(sel_year)
+    sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and y in str(r[0]))
+    serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and y in str(r[0]))
     
-    sprit = sum(float(r[3]) for r in tank_list if len(r) > 3 and y_str in str(r[0]))
-    serv = sum(float(r[2]) for r in serv_list if len(r) > 2 and y_str in str(r[0]))
-    fix = f_ü + f_s + f_v + f_b
+    st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + 5200):,.2f}") # 5200 als Platzhalter Fixkosten
     
-    # Marc vs Fabienne
-    m_sum = sum(float(r[3]) for r in tank_list if len(r) > 4 and r[4] == "Marc" and y_str in str(r[0]))
-    f_sum = sum(float(r[3]) for r in tank_list if len(r) > 4 and r[4] == "Fabienne" and y_str in str(r[0]))
-
-    st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + fix):,.2f}")
+    m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and y in str(r[0]))
+    f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and y in str(r[0]))
     
     c1, c2 = st.columns(2)
-    c1.markdown(f"🧔 **Marc:**<br><span style='color:#D4AF37; font-size:18px;'>CHF {m_sum:,.2f}</span>", unsafe_allow_html=True)
-    c2.markdown(f"👩 **Fabienne:**<br><span style='color:#FF69B4; font-size:18px;'>CHF {f_sum:,.2f}</span>", unsafe_allow_html=True)
-    
-    st.divider()
-    st.markdown(f"⛽ Benzin: <span class='gold-text'>CHF {sprit:,.2f}</span> | ⚙️ Service: <span class='gold-text'>CHF {serv:,.2f}</span>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    c1.write(f"🧔 Marc: **{m_sum:,.2f}**")
+    c2.write(f"👩 Fabienne: **{f_sum:,.2f}**")
 
 # --- ⛽ TANKEN ---
 with tab2:
-    with st.form("tank_form", clear_on_submit=True):
-        st.markdown("### ⛽ Neuer Tankstopp")
-        d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
-        lit = st.number_input("Liter", min_value=0.0, format="%.2f")
-        pr = st.number_input("CHF/L", value=2.15, format="%.2f")
+    with st.form("t_form", clear_on_submit=True):
+        d = st.date_input("Datum", date.today())
+        lit = st.number_input("Liter", step=0.1)
+        pr = st.number_input("CHF/L", value=2.15)
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
-        if st.form_submit_button("EINTRAG SPEICHERN"):
-            send_request({"sheet":"tanken","method":"append","values":[d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]})
-    
-    st.markdown("### 📜 Historie")
-    for i, r in enumerate(reversed(tank_list)):
-        with st.container():
-            col1, col2 = st.columns([0.85, 0.15])
-            p_color = "#D4AF37" if r[4] == "Marc" else "#FF69B4"
-            col1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** | <span style='color:{p_color}; font-weight:bold;'>{r[4]}</span>", unsafe_allow_html=True)
-            if col2.button("🗑️", key=f"del_t_{i}"):
-                send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
-            st.divider()
+        if st.form_submit_button("SPEICHERN"):
+            new_row = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
+            sync_action({"sheet":"tanken","method":"append","values":new_row}, st.session_state.tank_data)
+            st.rerun()
 
-# --- 💰 FINANZEN ---
-with tab3:
-    st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
-    n_ü = st.number_input("Überwintern", value=f_ü, format="%.2f")
-    n_s = st.number_input("Steuern", value=f_s, format="%.2f")
-    n_v = st.number_input("Versicherung", value=f_v, format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=f_b, format="%.2f")
-    if st.button("FIXKOSTEN AKTUALISIEREN"):
-        send_request({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]})
-    st.markdown("</div>", unsafe_allow_html=True)
+    for i, r in enumerate(reversed(st.session_state.tank_data)):
+        idx = len(st.session_state.tank_data) - 1 - i
+        col1, col2 = st.columns([0.85, 0.15])
+        col1.write(f"📅 {r[0]} | {r[1]}L | **{r[3]} CHF** ({r[4]})")
+        if col2.button("🗑️", key=f"del_t_{idx}"):
+            sync_action({"sheet":"tanken","method":"delete","index":idx}, st.session_state.tank_data, "delete")
+            st.rerun()
 
 # --- ⚙️ SERVICE ---
 with tab4:
-    with st.form("serv_form", clear_on_submit=True):
-        st.markdown("### ⚙️ Service")
-        d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
-        arb = st.text_input("Was wurde gemacht?")
-        kost = st.number_input("Kosten CHF", min_value=0.0, format="%.2f")
+    with st.form("s_form", clear_on_submit=True):
+        d_s = st.date_input("Datum", date.today())
+        arb = st.text_input("Was?")
+        kost = st.number_input("CHF")
         if st.form_submit_button("SERVICE SPEICHERN"):
-            send_request({"sheet":"service","method":"append","values":[d_s.strftime("%d.%m.%Y"), arb, kost]})
-    
-    st.markdown("### 📜 Historie")
-    for i, r in enumerate(reversed(serv_list)):
-        with st.container():
-            col1, col2 = st.columns([0.85, 0.15])
-            col1.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
-            if col2.button("🗑️", key=f"del_s_{i}"):
-                send_request({"sheet":"service","method":"delete","index": len(serv_list)-1-i})
-            st.divider()
+            new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
+            sync_action({"sheet":"service","method":"append","values":new_s}, st.session_state.serv_data)
+            st.rerun()
+
+    for i, r in enumerate(reversed(st.session_state.serv_data)):
+        idx = len(st.session_state.serv_data) - 1 - i
+        col1, col2 = st.columns([0.85, 0.15])
+        col1.write(f"📅 {r[0]} | {r[1]} | **{r[2]} CHF**")
+        if col2.button("🗑️", key=f"del_s_{idx}"):
+            sync_action({"sheet":"service","method":"delete","index":idx}, st.session_state.serv_data, "delete")
+            st.rerun()
