@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -28,17 +29,18 @@ st.markdown("""
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
-    /* Metriken und Texte auf WEISS */
-    [data-testid="stMetricValue"], label, p, span, .stMarkdown p, .stRadio label { color: #FFFFFF !important; }
+    /* Metric und normale Texte auf WEISS */
+    [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
     
-    /* Dropdown Lesbarkeit */
+    /* Dropdown-Texte beim Auswählen schwarz */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
 
-    /* GOLD für CHF in der Historie */
+    /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* ALLE SPEICHER-BUTTONS IN GOLD */
+    /* --- DIE RADIKALE BUTTON-LÖSUNG --- */
+    /* Erwischt alle Buttons (normale und Form-Submit) */
     .stApp div[data-testid="stForm"] button, 
     .stApp button[kind="secondary"], 
     .stApp button[kind="primaryFormSubmit"] {
@@ -49,14 +51,17 @@ st.markdown("""
         border-radius: 10px !important;
         height: 3.5em !important;
         border: none !important;
+        display: block !important;
     }
     
-    /* Lösch-Button */
+    /* AUSNAHME: Lösch-Buttons (Wir nutzen den Key, um sie wieder rot/transparent zu machen) */
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
+        height: 2.2em !important;
         width: auto !important;
+        font-weight: normal !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -69,23 +74,17 @@ def load_all_data(sheet):
         return r.json()
     except: return []
 
-# Daten laden
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
-
-# FIXKOSTEN - ZURÜCK ZUR FUNKTIONIERENDEN LOGIK
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
-    if raw and len(raw) > 0:
-        try:
-            # Greift auf die erste Zeile zu (Index 0)
-            st.session_state.fix_vals = [float(x) for x in raw[0][:4]]
-        except:
-            st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+    if len(raw) > 0:
+        try: st.session_state.fix_vals = [float(x) for x in raw[:4]]
+        except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
     else:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
@@ -155,9 +154,8 @@ with tab3:
     n_s = st.number_input("Steuern", value=v[1], format="%.2f")
     n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
-    if st.button("EINTRAG SPEICHERN", key="save_fix"):
+    if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
-        st.success("Gespeichert!")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -182,3 +180,4 @@ with tab4:
         if c2.button("🗑️", key=f"ds_{idx}"):
             fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
             st.rerun()
+
