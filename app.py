@@ -19,12 +19,15 @@ st.markdown("""
     h3 { color: #D4AF37 !important; font-size: 20px; }
     .white-text, label, .stMarkdown p { color: #F8F8F8 !important; }
     
+    /* GOLDENE ZAHLEN (METRICS) */
+    [data-testid="stMetricValue"] { color: #D4AF37 !important; font-weight: bold !important; }
+    .gold-text { color: #D4AF37 !important; font-weight: bold; }
+    
     /* Navigation Buttons */
     .stButton>button { 
         background-color: #8B6914 !important; color: white !important; 
         border: 1px solid #D4AF37 !important; border-radius: 10px; height: 50px;
     }
-    .nav-active>button { background-color: #D4AF37 !important; color: #050A14 !important; font-weight: bold; }
     
     [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
     [data-testid="stTable"] td { color: white !important; font-size: 12px; }
@@ -48,22 +51,18 @@ st.session_state.tank_data = raw_tank[1:] if len(raw_tank) > 0 else []
 raw_serv = fetch_data("service")
 st.session_state.service_data = raw_serv[1:] if len(raw_serv) > 0 else []
 
-# Fixkosten aus Google Sheet laden (oder Fallback)
-raw_fix = fetch_data("fixkosten")
-if len(raw_fix) > 1:
-    st.session_state.f_ü = float(raw_fix[1][0])
-    st.session_state.f_s = float(raw_fix[1][1])
-    st.session_state.f_v = float(raw_fix[1][2])
-    st.session_state.f_b = float(raw_fix[1][3])
-else:
-    if 'f_ü' not in st.session_state:
-        st.session_state.f_ü, st.session_state.f_s, st.session_state.f_v, st.session_state.f_b = 2200.0, 350.0, 1150.0, 1500.0
+# Fixkosten (Initialisierung)
+if 'f_ü' not in st.session_state:
+    st.session_state.f_ü, st.session_state.f_s, st.session_state.f_v, st.session_state.f_b = 2200.0, 350.0, 1150.0, 1500.0
 
-# --- HEADER ---
+# --- HEADER (BILD GANZ OBEN) ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# 2x2 NAVIGATION GRID
+if os.path.exists("boot_gross.jpg"): 
+    st.image("boot_gross.jpg", use_container_width=True)
+
+# --- NAVIGATION (UNTER DEM BILD) ---
 col_nav1, col_nav2 = st.columns(2)
 with col_nav1:
     if st.button("📋 Übersicht", use_container_width=True): st.session_state.menu_select = "📋 Übersicht"
@@ -86,34 +85,41 @@ def get_stats(year):
 
 # --- 📋 ÜBERSICHT ---
 if sel_menu == "📋 Übersicht":
-    if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     sel_year = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
     sprit, serv, fix = get_stats(sel_year)
+    
     st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + fix):,.2f}")
-    st.markdown(f"⛽ Benzin: **CHF {sprit:,.2f}**<br>⚙️ Service: **CHF {serv:,.2f}**<br>🏗️ Fixkosten: **CHF {fix:,.2f}**", unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    ⛽ Benzin: <span class='gold-text'>CHF {sprit:,.2f}</span><br>
+    ⚙️ Service: <span class='gold-text'>CHF {serv:,.2f}</span><br>
+    🏗️ Fixkosten: <span class='gold-text'>CHF {fix:,.2f}</span>
+    """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- 💰 FINANZEN ---
 elif sel_menu == "💰 Finanzen":
     st.markdown("<div class='card'><h3>💰 Fixkosten anpassen</h3>", unsafe_allow_html=True)
-    f_ü = st.number_input("Überwintern", value=st.session_state.f_ü, step=50.0)
-    f_s = st.number_input("Steuern", value=st.session_state.f_s, step=10.0)
-    f_v = st.number_input("Versicherung", value=st.session_state.f_v, step=10.0)
-    f_b = st.number_input("Bootsplatz", value=st.session_state.f_b, step=50.0)
+    st.session_state.f_ü = st.number_input("Überwintern", value=st.session_state.f_ü, step=50.0)
+    st.session_state.f_s = st.number_input("Steuern", value=st.session_state.f_s, step=10.0)
+    st.session_state.f_v = st.number_input("Versicherung", value=st.session_state.f_v, step=10.0)
+    st.session_state.f_b = st.number_input("Bootsplatz", value=st.session_state.f_b, step=50.0)
     
-    if st.button("Dauerhaft Speichern"):
-        st.session_state.f_ü, st.session_state.f_s, st.session_state.f_v, st.session_state.f_b = f_ü, f_s, f_v, f_b
+    fix_total = st.session_state.f_ü + st.session_state.f_s + st.session_state.f_v + st.session_state.f_b
+    st.markdown(f"<h4>Total Fixkosten: <span class='gold-text'>CHF {fix_total:,.2f}</span></h4>", unsafe_allow_html=True)
+    
+    if st.button("Speichern"):
         try:
-            requests.post(SCRIPT_URL, json={"sheet":"fixkosten","method":"update","values":[f_ü, f_s, f_v, f_b]}, timeout=3)
-            st.success("Gespeichert!")
+            requests.post(SCRIPT_URL, json={"sheet":"fixkosten","method":"update","values":[st.session_state.f_ü, st.session_state.f_s, st.session_state.f_v, st.session_state.f_b]}, timeout=3)
+            st.success("Erfolgreich gespeichert!")
         except: st.error("Fehler beim Senden")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⛽ TANKEN ---
 elif sel_menu == "⛽ Tanken":
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
-    st.markdown("<div class='card'><h3>⛽ Tanken</h3>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
     d = st.date_input("Datum", value=date.today(), format="DD.MM.YYYY")
     lit = st.number_input("Liter", min_value=0.0)
     pr = st.number_input("CHF/L", value=2.15)
