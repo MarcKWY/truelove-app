@@ -19,16 +19,18 @@ st.markdown("""
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
-    /* GOLD nur für die CHF-Beträge */
+    /* Grosse Metric-Zahl auf WEISS erzwingen */
+    [data-testid="stMetricValue"] { color: #FFFFFF !important; }
+    
+    /* GOLD nur für die spezifischen CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* Alles andere WEISS erzwingen (Labels, Texte, Radio-Buttons) */
-    label, .stMarkdown p, .stSelectbox label, .stRadio label, div[data-baseweb="tab"] p { 
+    /* Alles andere WEISS erzwingen (Radio-Buttons, Namen, Labels) */
+    label, p, span, div, .stMarkdown p, .stRadio label, div[data-baseweb="radio"] div { 
         color: #FFFFFF !important; 
-        font-weight: 500 !important;
     }
 
-    /* Tab-Texte (Übersicht, Tanken etc.) WEISS */
+    /* Tabs Design */
     .stTabs [data-baseweb="tab"] { color: #FFFFFF !important; }
     .stTabs [aria-selected="true"] p { color: #D4AF37 !important; }
 
@@ -40,6 +42,7 @@ st.markdown("""
         width: 100%;
         border-radius: 10px;
         height: 3.5em;
+        border: none;
     }
     
     /* Lösch-Button */
@@ -63,7 +66,7 @@ if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
-    raw = load_all_data("service")
+    raw = load_data = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
@@ -111,6 +114,7 @@ with tab1:
 with tab2:
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
+        st.markdown("### ⛽ Neuer Tankstopp")
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         lit = st.number_input("Liter", step=0.1, format="%.2f")
         pr = st.number_input("CHF/L", value=2.15, format="%.2f")
@@ -124,7 +128,6 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        # Text weiss, CHF gold
         c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
