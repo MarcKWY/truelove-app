@@ -31,14 +31,14 @@ st.markdown("""
     /* Metric und normale Texte auf WEISS */
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
     
-    /* FIX: Dropdown-Texte (Jahr wählen) schwarz machen beim Auswählen */
+    /* Dropdown-Texte beim Auswählen schwarz */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
 
     /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* Identische goldene Speicher-Buttons */
+    /* ALLE Speicher-Buttons in GOLD */
     .stButton > button {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
@@ -49,7 +49,7 @@ st.markdown("""
         border: none !important;
     }
     
-    /* Roter Lösch-Button bleibt klein und dezent */
+    /* NUR Lösch-Buttons bleiben dezent rot umrandet */
     .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
@@ -79,7 +79,8 @@ if 'fix_vals' not in st.session_state:
     if len(raw) > 0:
         try: st.session_state.fix_vals = [float(x) for x in raw[:4]]
         except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-    else: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+    else:
+        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
 def fast_sync(payload, local_key, action="append", idx=None):
     if action == "append": st.session_state[local_key].append(payload["values"])
@@ -143,11 +144,10 @@ with tab2:
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
-    # Hier war der Fehler: Wir müssen die Einzelwerte v[0], v[1] etc. ansprechen
-    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
+    n_ü = st.number_input("Überwintern", value=v[0], step=50.0, format="%.2f")
+    n_s = st.number_input("Steuern", value=v[1], step=10.0, format="%.2f")
+    n_v = st.number_input("Versicherung", value=v[2], step=10.0, format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=v[3], step=50.0, format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
