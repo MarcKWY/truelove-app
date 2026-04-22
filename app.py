@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -13,55 +12,23 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    /* Header & Katzen-Logo dunkel/unsichtbar */
     header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
         background-color: #050A14 !important; 
         color: #050A14 !important;
         display: none !important;
     }
-    
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
-    
-    .truelove-title { 
-        font-family: 'Georgia', serif; 
-        font-size: 34px; 
-        font-weight: bold; 
-        color: #D4AF37 !important; 
-        text-align: center; 
-        margin-bottom: 0px; 
-    }
-    
+    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
-    
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
-    
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
-
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
-    
-    .stApp div[data-testid="stForm"] button, 
-    .stApp button[kind="secondary"], 
-    .stApp button[kind="primaryFormSubmit"] {
-        background-color: #D4AF37 !important;
-        color: #050A14 !important;
-        font-weight: bold !important;
-        width: 100% !important;
-        border-radius: 10px !important;
-        height: 3.5em !important;
-        border: none !important;
-        display: block !important;
+    .stApp div[data-testid="stForm"] button, .stApp button[kind="secondary"], .stApp button[kind="primaryFormSubmit"] {
+        background-color: #D4AF37 !important; color: #050A14 !important; font-weight: bold !important; width: 100% !important; border-radius: 10px !important; height: 3.5em !important; border: none !important; display: block !important;
     }
-    
-    .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
-        background-color: transparent !important;
-        color: #ff4b4b !important;
-        border: 1px solid #ff4b4b !important;
-        height: 2.2em !important;
-        width: auto !important;
-        font-weight: normal !important;
-    }
+    .stApp button[key^="dt_"], .stApp button[key^="ds_"] { background-color: transparent !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important; height: 2.2em !important; width: auto !important; font-weight: normal !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -105,18 +72,13 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 # --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    # NUR HIER ANGEPASST: Start bei 2026, geht nach oben
     sel_y = st.selectbox("Jahr wählen", [2026, 2027, 2028, 2029], index=0)
-    
     sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
     serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r[0]))
     fix_sum = sum(st.session_state.fix_vals)
-    
     st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
-    
     m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and str(sel_y) in str(r[0]))
     f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and str(sel_y) in str(r[0]))
-    
     st.write(f"🧔 Marc: CHF {m_sum:,.2f}")
     st.write(f"👩 Fabienne: CHF {f_sum:,.2f}")
     st.divider()
@@ -136,7 +98,6 @@ with tab2:
             new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
             fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
             st.rerun()
-    
     st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
@@ -155,8 +116,13 @@ with tab3:
     n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
-        fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
-    st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
+        new_v = [n_ü, n_s, n_v, n_b]
+        # FIX: Erst lokal speichern, dann zu Google schicken
+        st.session_state.fix_vals = new_v
+        fast_sync({"sheet":"fixkosten","method":"update","values":new_v}, "fix_vals", "update")
+        st.success("Werte gespeichert!")
+        st.rerun() # Zwingt die App, die Anzeige sofort zu aktualisieren
+    st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⚙️ SERVICE ---
@@ -171,7 +137,6 @@ with tab4:
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
             fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
             st.rerun()
-            
     st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
