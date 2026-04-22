@@ -38,8 +38,11 @@ st.markdown("""
     /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* ALLE SPEICHER-BUTTONS IN GOLD (Inklusive Form-Buttons für Tanken/Service) */
-    .stButton > button, button[kind="primaryFormSubmit"] {
+    /* --- DIE RADIKALE BUTTON-LÖSUNG --- */
+    /* Erwischt alle Buttons (normale und Form-Submit) */
+    .stApp div[data-testid="stForm"] button, 
+    .stApp button[kind="secondary"], 
+    .stApp button[kind="primaryFormSubmit"] {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
         font-weight: bold !important;
@@ -47,16 +50,17 @@ st.markdown("""
         border-radius: 10px !important;
         height: 3.5em !important;
         border: none !important;
+        display: block !important;
     }
     
-    /* NUR Lösch-Buttons bleiben dezent rot umrandet */
-    .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
+    /* AUSNAHME: Lösch-Buttons (Wir nutzen den Key, um sie wieder rot/transparent zu machen) */
+    .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
         height: 2.2em !important;
         width: auto !important;
-        font-size: 11px !important;
+        font-weight: normal !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -145,10 +149,10 @@ with tab2:
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], step=50.0, format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], step=10.0, format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], step=10.0, format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], step=50.0, format="%.2f")
+    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
+    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
+    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
