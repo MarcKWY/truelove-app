@@ -12,34 +12,23 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    /* Alles auf WEISS setzen */
+    /* Grund-Design auf WEISS */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     
-    /* TITEL IN GOLD */
-    .truelove-title { 
-        font-family: 'Georgia', serif; 
-        font-size: 34px; 
-        font-weight: bold; 
-        color: #D4AF37 !important; 
-        text-align: center; 
-        margin-bottom: 0px; 
-    }
-    
+    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
-    /* Metric und normale Texte auf WEISS */
+    /* Metriken und Labels auf WEISS */
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
     
-    /* Dropdown-Texte beim Auswählen schwarz */
+    /* Dropdown-Fix */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
 
-    /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* --- DIE RADIKALE BUTTON-LÖSUNG --- */
-    /* Erwischt alle Buttons (normale und Form-Submit) */
+    /* ALLE SPEICHER-BUTTONS IN GOLD */
     .stApp div[data-testid="stForm"] button, 
     .stApp button[kind="secondary"], 
     .stApp button[kind="primaryFormSubmit"] {
@@ -50,17 +39,15 @@ st.markdown("""
         border-radius: 10px !important;
         height: 3.5em !important;
         border: none !important;
-        display: block !important;
     }
     
-    /* AUSNAHME: Lösch-Buttons (Wir nutzen den Key, um sie wieder rot/transparent zu machen) */
+    /* Lösch-Buttons rot/transparent */
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
         height: 2.2em !important;
         width: auto !important;
-        font-weight: normal !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -73,18 +60,24 @@ def load_all_data(sheet):
         return r.json()
     except: return []
 
+# Daten laden
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
+
+# FIXKOSTEN LADEN (Stabilisiert)
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
-    if len(raw) > 0:
-        try: st.session_state.fix_vals = [float(x) for x in raw[:4]]
-        except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-    else:
+    try:
+        if raw and len(raw) > 0:
+            # Erste Datenzeile nehmen
+            st.session_state.fix_vals = [float(x) for x in raw[0][:4]]
+        else:
+            st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+    except:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
 def fast_sync(payload, local_key, action="append", idx=None):
@@ -155,6 +148,7 @@ with tab3:
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
+        st.success("Gespeichert!")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -167,6 +161,7 @@ with tab4:
         arb = st.text_input("Was wurde gemacht?")
         kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
         if st.form_submit_button("EINTRAG SPEICHERN"):
+            # Speichert Datum als Tag.Monat.Jahr
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
             fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
             st.rerun()
@@ -175,6 +170,7 @@ with tab4:
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
+        # Anzeige im Format Tag.Monat.Jahr
         c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
             fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
