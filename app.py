@@ -13,140 +13,132 @@ SCRIPT_URL = "https://google.com"
 st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
-    .truelove-title { font-family: 'Georgia', serif; font-size: 40px; font-weight: bold; color: #D4AF37; text-align: center; letter-spacing: 5px; margin-bottom: 0px; }
-    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 16px; text-align: center; color: #E0E0E0; opacity: 0.9; letter-spacing: 3px; margin-bottom: 20px; }
-    .card { background-color: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 20px; }
-    h3 { color: #D4AF37 !important; }
-    .white-text, .stMetric label, [data-testid="stMetricValue"], label, .stMarkdown p { color: #F8F8F8 !important; }
+    .truelove-title { font-family: 'Georgia', serif; font-size: 38px; font-weight: bold; color: #D4AF37; text-align: center; letter-spacing: 3px; margin-bottom: 0px; }
+    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.8; letter-spacing: 2px; margin-bottom: 15px; }
+    .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
+    h3 { color: #D4AF37 !important; font-size: 20px; }
+    .white-text, label, .stMarkdown p { color: #F8F8F8 !important; }
     
-    /* Tabs Design */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
-    .stTabs [data-baseweb="tab"] { 
-        background-color: rgba(212, 175, 55, 0.1); 
-        border-radius: 5px 5px 0px 0px; 
-        color: #D4AF37 !important;
-        padding: 10px 20px;
+    /* Navigation Buttons */
+    .stButton>button { 
+        background-color: #8B6914 !important; color: white !important; 
+        border: 1px solid #D4AF37 !important; border-radius: 10px; height: 50px;
     }
-    .stTabs [aria-selected="true"] { background-color: rgba(212, 175, 55, 0.3) !important; border-bottom: 2px solid #D4AF37 !important; }
-
-    .stButton>button { background-color: #8B6914 !important; color: white !important; border: 1px solid #D4AF37 !important; width: 100%; border-radius: 10px; }
+    .nav-active>button { background-color: #D4AF37 !important; color: #050A14 !important; font-weight: bold; }
+    
     [data-testid="stTable"] { background-color: #0A1E3C !important; border: 1px solid #D4AF37 !important; }
-    [data-testid="stTable"] td { color: white !important; }
+    [data-testid="stTable"] td { color: white !important; font-size: 12px; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- DATEN INITIALISIEREN ---
-@st.cache_data(ttl=60)
+if 'menu_select' not in st.session_state: st.session_state.menu_select = "📋 Übersicht"
+
+@st.cache_data(ttl=30)
 def fetch_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=5)
-        return r.json()[1:]
+        return r.json()
     except: return []
 
-if 'tank_data' not in st.session_state: st.session_state.tank_data = fetch_data("tanken")
-if 'service_data' not in st.session_state: st.session_state.service_data = fetch_data("service")
+# Daten laden
+raw_tank = fetch_data("tanken")
+st.session_state.tank_data = raw_tank[1:] if len(raw_tank) > 0 else []
 
-# Fixkosten-Initialisierung (falls noch nicht vorhanden)
-if 'f_ü' not in st.session_state: st.session_state.f_ü = 2200.0
-if 'f_s' not in st.session_state: st.session_state.f_s = 350.0
-if 'f_v' not in st.session_state: st.session_state.f_v = 1150.0
-if 'f_b' not in st.session_state: st.session_state.f_b = 1500.0
+raw_serv = fetch_data("service")
+st.session_state.service_data = raw_serv[1:] if len(raw_serv) > 0 else []
+
+# Fixkosten aus Google Sheet laden (oder Fallback)
+raw_fix = fetch_data("fixkosten")
+if len(raw_fix) > 1:
+    st.session_state.f_ü = float(raw_fix[1][0])
+    st.session_state.f_s = float(raw_fix[1][1])
+    st.session_state.f_v = float(raw_fix[1][2])
+    st.session_state.f_b = float(raw_fix[1][3])
+else:
+    if 'f_ü' not in st.session_state:
+        st.session_state.f_ü, st.session_state.f_s, st.session_state.f_v, st.session_state.f_b = 2200.0, 350.0, 1150.0, 1500.0
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-if os.path.exists("boot_gross.jpg"): 
-    st.image("boot_gross.jpg", use_container_width=True)
+# 2x2 NAVIGATION GRID
+col_nav1, col_nav2 = st.columns(2)
+with col_nav1:
+    if st.button("📋 Übersicht", use_container_width=True): st.session_state.menu_select = "📋 Übersicht"
+    if st.button("⛽ Tanken", use_container_width=True): st.session_state.menu_select = "⛽ Tanken"
+with col_nav2:
+    if st.button("💰 Finanzen", use_container_width=True): st.session_state.menu_select = "💰 Finanzen"
+    if st.button("⚙️ Service", use_container_width=True): st.session_state.menu_select = "⚙️ Service"
 
-# --- MENÜ-ORDNUNG (TABS) ---
-tab_ü, tab_f, tab_t, tab_s = st.tabs(["📋 Übersicht", "💰 Finanzen", "⛽ Tanken", "⚙️ Service"])
+st.divider()
 
-# Summen-Logik
+# --- LOGIK ---
+sel_menu = st.session_state.menu_select
+
 def get_stats(year):
     y_str = str(year)
-    sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r) > 3 and y_str in r[0])
-    serv = sum(float(r[2]) for r in st.session_state.service_data if len(r) > 2 and y_str in r[0])
+    sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r) > 3 and y_str in str(r[0]))
+    serv = sum(float(r[2]) for r in st.session_state.service_data if len(r) > 2 and y_str in str(r[0]))
     fix = st.session_state.f_ü + st.session_state.f_s + st.session_state.f_v + st.session_state.f_b
     return sprit, serv, fix
 
 # --- 📋 ÜBERSICHT ---
-with tab_ü:
+if sel_menu == "📋 Übersicht":
+    if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    sel_year = st.selectbox("Jahr wählen", [2025, 2026, 2027, 2028], index=1)
+    sel_year = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
     sprit, serv, fix = get_stats(sel_year)
-    total = sprit + serv + fix
-    
-    st.metric(f"GESAMTKOSTEN {sel_year}", f"CHF {total:,.2f}")
-    c1, c2 = st.columns(2)
-    c1.markdown(f"<span class='white-text'>⛽ Benzin:</span> **CHF {sprit:,.2f}**", unsafe_allow_html=True)
-    c1.markdown(f"<span class='white-text'>⚙️ Service:</span> **CHF {serv:,.2f}**", unsafe_allow_html=True)
-    c2.markdown(f"<span class='white-text'>🏗️ Fixkosten:</span> **CHF {fix:,.2f}**", unsafe_allow_html=True)
+    st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + fix):,.2f}")
+    st.markdown(f"⛽ Benzin: **CHF {sprit:,.2f}**<br>⚙️ Service: **CHF {serv:,.2f}**<br>🏗️ Fixkosten: **CHF {fix:,.2f}**", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- 💰 FINANZEN ---
-with tab_f:
-    st.markdown("<div class='card'><h3>💰 Jährliche Fixkosten</h3>", unsafe_allow_html=True)
+elif sel_menu == "💰 Finanzen":
+    st.markdown("<div class='card'><h3>💰 Fixkosten anpassen</h3>", unsafe_allow_html=True)
+    f_ü = st.number_input("Überwintern", value=st.session_state.f_ü, step=50.0)
+    f_s = st.number_input("Steuern", value=st.session_state.f_s, step=10.0)
+    f_v = st.number_input("Versicherung", value=st.session_state.f_v, step=10.0)
+    f_b = st.number_input("Bootsplatz", value=st.session_state.f_b, step=50.0)
     
-    # Bearbeitbare Felder
-    st.session_state.f_ü = st.number_input("❄️ Überwintern (CHF)", value=st.session_state.f_ü, step=50.0)
-    st.session_state.f_s = st.number_input("📑 Steuern (CHF)", value=st.session_state.f_s, step=10.0)
-    st.session_state.f_v = st.number_input("🛡️ Versicherung (CHF)", value=st.session_state.f_v, step=10.0)
-    st.session_state.f_b = st.number_input("⚓ Bootsplatz (CHF)", value=st.session_state.f_b, step=50.0)
-    
-    fix_sum = st.session_state.f_ü + st.session_state.f_s + st.session_state.f_v + st.session_state.f_b
-    st.divider()
-    st.markdown(f"<h4>Total Fixkosten: CHF {fix_sum:,.2f}</h4>", unsafe_allow_html=True)
+    if st.button("Dauerhaft Speichern"):
+        st.session_state.f_ü, st.session_state.f_s, st.session_state.f_v, st.session_state.f_b = f_ü, f_s, f_v, f_b
+        try:
+            requests.post(SCRIPT_URL, json={"sheet":"fixkosten","method":"update","values":[f_ü, f_s, f_v, f_b]}, timeout=3)
+            st.success("Gespeichert!")
+        except: st.error("Fehler beim Senden")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⛽ TANKEN ---
-with tab_t:
-    if os.path.exists("tanken.jpg"):
-        c1, c2, c3 = st.columns([1,2,1]); c2.image("tanken.jpg", use_container_width=True)
-    
-    st.markdown("<div class='card'><h3>⛽ Tankstopp erfassen</h3>", unsafe_allow_html=True)
-    d = st.date_input("Datum", value=date.today(), format="DD.MM.YYYY", key="tank_date")
-    c1, c2 = st.columns(2)
-    lit = c1.number_input("Liter", min_value=0.0, key="tank_lit")
-    pr = c2.number_input("CHF/L", value=2.15, key="tank_pr")
-    wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True, key="tank_wer")
-    
-    if st.button("Speichern ✅", key="save_tank"):
+elif sel_menu == "⛽ Tanken":
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
+    st.markdown("<div class='card'><h3>⛽ Tanken</h3>", unsafe_allow_html=True)
+    d = st.date_input("Datum", value=date.today(), format="DD.MM.YYYY")
+    lit = st.number_input("Liter", min_value=0.0)
+    pr = st.number_input("CHF/L", value=2.15)
+    wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
+    if st.button("Eintragen"):
         row = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
-        st.session_state.tank_data.append(row)
-        try: requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"append","values":row}, timeout=2)
+        try: requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"append","values":row}, timeout=3)
         except: pass
-        st.rerun()
+        st.cache_data.clear(); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    
     if st.session_state.tank_data:
-        st.table(pd.DataFrame(st.session_state.tank_data, columns=["Datum", "Liter", "CHF/L", "Total", "Wer"]))
-        with st.expander("🗑️ Eintrag löschen"):
-            for i, r in enumerate(st.session_state.tank_data):
-                if st.button(f"Lösche {r[0]} - {r[1]}L", key=f"del_t_{i}"):
-                    st.session_state.tank_data.pop(i); st.rerun()
+        st.table(pd.DataFrame(st.session_state.tank_data, columns=["Datum", "Liter", "CHF/L", "Total", "Wer"]).iloc[::-1])
 
 # --- ⚙️ SERVICE ---
-with tab_s:
-    if os.path.exists("motor.jpg"):
-        c1, c2, c3 = st.columns([1,2,1]); c2.image("motor.jpg", use_container_width=True)
-    
-    st.markdown("<div class='card'><h3>⚙️ Service-Log</h3>", unsafe_allow_html=True)
-    d = st.date_input("Datum", value=date.today(), format="DD.MM.YYYY", key="serv_date")
-    arb = st.text_input("Was wurde gemacht?", key="serv_arb")
-    kost = st.number_input("Kosten CHF", min_value=0.0, key="serv_kost")
-    
-    if st.button("Speichern ✅", key="save_serv"):
+elif sel_menu == "⚙️ Service":
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+    st.markdown("<div class='card'><h3>⚙️ Service</h3>", unsafe_allow_html=True)
+    d = st.date_input("Datum", value=date.today(), format="DD.MM.YYYY")
+    arb = st.text_input("Was wurde gemacht?")
+    kost = st.number_input("Kosten CHF", min_value=0.0)
+    if st.button("Eintragen"):
         row = [d.strftime("%d.%m.%Y"), arb, kost]
-        st.session_state.service_data.append(row)
-        try: requests.post(SCRIPT_URL, json={"sheet":"service","method":"append","values":row}, timeout=2)
+        try: requests.post(SCRIPT_URL, json={"sheet":"service","method":"append","values":row}, timeout=3)
         except: pass
-        st.rerun()
+        st.cache_data.clear(); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    
     if st.session_state.service_data:
-        st.table(pd.DataFrame(st.session_state.service_data, columns=["Datum", "Arbeit", "CHF"]))
-        with st.expander("🗑️ Eintrag löschen"):
-            for i, r in enumerate(st.session_state.service_data):
-                if st.button(f"Lösche {r[0]} - {r[1]}", key=f"del_s_{i}"):
-                    st.session_state.service_data.pop(i); st.rerun()
+        st.table(pd.DataFrame(st.session_state.service_data, columns=["Datum", "Arbeit", "CHF"]).iloc[::-1])
