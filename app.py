@@ -76,7 +76,9 @@ with tab1:
 
 # --- ⛽ TANKEN ---
 with tab2:
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
+    if os.path.exists("tanken.jpg"): 
+        st.image("tanken.jpg", width=250)
+        
     with st.form("tank_form"):
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         lit = st.number_input("Liter", min_value=0.0, format="%.2f")
@@ -84,6 +86,17 @@ with tab2:
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
         if st.form_submit_button("Eintragen"):
             send_request({"sheet":"tanken","method":"append","values":[d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]})
+    
+    st.markdown("### Historie")
+    if tank_list:
+        for i, r in enumerate(reversed(tank_list)):
+            c1, c2 = st.columns([0.8, 0.2])
+            # r[0]=Datum, r[1]=Liter, r[3]=Total, r[4]=Wer
+            c1.write(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** ({r[4]})")
+            if c2.button("🗑️", key=f"del_t_{i}"):
+                send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
+    else:
+        st.info("Noch keine Tank-Einträge vorhanden.")
     
     st.markdown("### Historie")
     for i, r in enumerate(reversed(tank_list)):
@@ -105,13 +118,25 @@ with tab3:
 
 # --- ⚙️ SERVICE ---
 with tab4:
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+    if os.path.exists("motor.jpg"): 
+        st.image("motor.jpg", width=250)
+    
     with st.form("serv_form"):
         d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         arb = st.text_input("Was wurde gemacht?")
         kost = st.number_input("Kosten CHF", min_value=0.0, format="%.2f")
         if st.form_submit_button("Eintragen"):
             send_request({"sheet":"service","method":"append","values":[d_s.strftime("%d.%m.%Y"), arb, kost]})
+    
+    st.markdown("### Historie")
+    if serv_list:
+        for i, r in enumerate(reversed(serv_list)):
+            c1, c2 = st.columns([0.8, 0.2])
+            c1.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
+            if c2.button("🗑️", key=f"del_s_{i}"):
+                send_request({"sheet":"service","method":"delete","index": len(serv_list)-1-i})
+    else:
+        st.info("Noch keine Service-Einträge vorhanden.")
     
     st.markdown("### Historie")
     for i, r in enumerate(reversed(serv_list)):
