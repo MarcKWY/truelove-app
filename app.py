@@ -12,23 +12,16 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    /* Grund-Design auf WEISS */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
-    
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
-    
-    /* Metriken und Labels auf WEISS */
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
-    
-    /* Dropdown-Fix */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
-
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
-    
-    /* ALLE SPEICHER-BUTTONS IN GOLD */
+
+    /* Button-Design Gold */
     .stApp div[data-testid="stForm"] button, 
     .stApp button[kind="secondary"], 
     .stApp button[kind="primaryFormSubmit"] {
@@ -41,19 +34,30 @@ st.markdown("""
         border: none !important;
     }
     
-    /* Lösch-Buttons rot/transparent */
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
-        height: 2.2em !important;
+        height: auto !important;
         width: auto !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
+# --- DATUM-KONVERTIERUNG ---
+def format_date_german(d_str):
+    """Erzwingt das Format TT.MM.JJJJ, egal was von Google kommt"""
+    try:
+        # Falls es bereits ein Datumsobjekt oder ISO-String ist
+        if "T" in str(d_str): d_str = str(d_str).split("T")[0]
+        for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y"):
+            try: return datetime.strptime(str(d_str), fmt).strftime("%d.%m.%Y")
+            except: continue
+        return str(d_str)
+    except: return str(d_str)
+
 # --- DATEN-LOGIK ---
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def load_all_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
@@ -64,17 +68,19 @@ def load_all_data(sheet):
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
+
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
 
-# FIXKOSTEN LADEN (Stabilisiert)
+# FIXKOSTEN LADEN (Absolut stabilisiert)
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
     try:
         if raw and len(raw) > 0:
-            # Erste Datenzeile nehmen
-            st.session_state.fix_vals = [float(x) for x in raw[0][:4]]
+            # Falls Google Header mitliefert, Zeile 0 oder 1 prüfen
+            first_row = raw[0] if not isinstance(raw[0][0], str) else raw[1]
+            st.session_state.fix_vals = [float(x) for x in first_row[:4]]
         else:
             st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
     except:
@@ -133,7 +139,9 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
+        # Datum konvertieren für Anzeige
+        d_disp = format_date_german(r[0])
+        c1.markdown(f"📅 {d_disp} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
             st.rerun()
@@ -146,7 +154,7 @@ with tab3:
     n_s = st.number_input("Steuern", value=v[1], format="%.2f")
     n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
-    if st.button("EINTRAG SPEICHERN"):
+    if st.form_submit_button("EINTRAG SPEICHERN") if 'stForm' in str(st.container) else st.button("EINTRAG SPEICHERN", key="fix_save"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
         st.success("Gespeichert!")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
@@ -161,7 +169,6 @@ with tab4:
         arb = st.text_input("Was wurde gemacht?")
         kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
         if st.form_submit_button("EINTRAG SPEICHERN"):
-            # Speichert Datum als Tag.Monat.Jahr
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
             fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
             st.rerun()
@@ -170,8 +177,9 @@ with tab4:
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        # Anzeige im Format Tag.Monat.Jahr
-        c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
+        # Datum konvertieren für Anzeige
+        d_disp = format_date_german(r[0])
+        c1.markdown(f"📅 {d_disp} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
             fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
             st.rerun()
