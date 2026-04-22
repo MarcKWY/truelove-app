@@ -16,10 +16,12 @@ st.markdown("""
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; margin-bottom: 0px; }
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
+    
+    /* Goldene Schrift für alle CHF Beträge */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* Weisse Schrift für die Namen in der Historie */
-    .white-name { color: #FFFFFF !important; font-weight: normal; }
+    /* Weisse Schrift für Namen erzwingen */
+    .white-text { color: #FFFFFF !important; }
 
     label, .stMarkdown p, .stSelectbox label, .stRadio label { 
         color: #D4AF37 !important; 
@@ -106,8 +108,8 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        # Name (r[4]) wird hier in WEISS (class='white-name') angezeigt
-        c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> (<span class='white-name'>{r[4]}</span>)", unsafe_allow_html=True)
+        # Hier wird die Farbe für den Namen (r[4]) weiss erzwungen:
+        c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> (<span class='white-text'>{r[4]}</span>)", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
             st.rerun()
