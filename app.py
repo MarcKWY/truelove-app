@@ -24,33 +24,52 @@ st.markdown("""
 @st.cache_data(ttl=300)
 def fetch_data(sheet):
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
-        return r.json()
+        # Timeout auf 20 Sekunden erhöht
+        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=20)
+        if r.status_code == 200:
+            return r.json()
+        return []
     except:
         return []
 
 def send_request(payload):
-    try:
-        with st.spinner('Verarbeite...'):
-            requests.post(SCRIPT_URL, json=payload, timeout=10)
+    with st.spinner('Daten werden übertragen...'):
+        try:
+            # Erhöhter Timeout für langsame Google-Antworten
+            response = requests.post(SCRIPT_URL, json=payload, timeout=20)
+            
+            # Wir leeren den Cache sofort nach dem Senden
             st.cache_data.clear()
+            
+            # Kurze Pause, damit Google Zeit zum Speichern hat
+            import time
+            time.sleep(1) 
+            
             st.rerun()
-    except:
-        st.error("Verbindung zu Google fehlgeschlagen.")
+        except requests.exceptions.Timeout:
+            # Falls es zu lange dauert, aber die Daten evtl. doch ankommen
+            st.warning("Google braucht lange zum Antworten. Prüfe bitte, ob der Eintrag gespeichert wurde.")
+            st.cache_data.clear()
+        except Exception as e:
+            st.error(f"Fehler: {e}")
 
-# --- DATEN LADEN ---
+# --- DATEN LADEN (MIT SICHERHEITS-CHECK) ---
 raw_tank = fetch_data("tanken")
-tank_list = raw_tank[1:] if len(raw_tank) > 1 else []
+# Wir stellen sicher, dass r genug Spalten hat, um Fehler zu vermeiden
+tank_list = [r for r in raw_tank[1:] if len(r) >= 4] if len(raw_tank) > 1 else []
 
 raw_serv = fetch_data("service")
-serv_list = raw_serv[1:] if len(raw_serv) > 1 else []
+serv_list = [r for r in raw_serv[1:] if len(r) >= 3] if len(raw_serv) > 1 else []
 
 raw_fix = fetch_data("fixkosten")
-if len(raw_fix) > 1:
-    f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
+# Prüfen ob Daten da sind, sonst Standardwerte
+if len(raw_fix) > 1 and len(raw_fix[1]) >= 4:
+    try:
+        f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
+    except:
+        f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
 else:
     f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
-
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
