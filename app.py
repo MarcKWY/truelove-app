@@ -11,9 +11,7 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
-        display: none !important;
-    }
+    header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { display: none !important; }
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
@@ -30,33 +28,25 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- DATEN-LOGIK ---
-def load_all_data(sheet):
+def load_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
         return r.json()
     except: return []
 
-# Daten nur laden, wenn sie noch nicht im Session State sind
+# Daten initial laden
 if 'tank_data' not in st.session_state:
-    raw = load_all_data("tanken")
+    raw = load_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
-    raw = load_all_data("service")
+    raw = load_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
 if 'fix_vals' not in st.session_state:
-    raw = load_all_data("fixkosten")
-    if len(raw) > 0:
-        try: st.session_state.fix_vals = [float(x) for x in raw[:4]]
-        except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+    raw = load_data("fixkosten")
+    if raw and len(raw) > 0:
+        st.session_state.fix_vals = [float(x) for x in raw[:4]]
     else:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-
-def fast_sync(payload, local_key, action="append", idx=None):
-    if action == "append": st.session_state[local_key].append(payload["values"])
-    elif action == "delete": st.session_state[local_key].pop(idx)
-    elif action == "update": st.session_state.fix_vals = payload["values"]
-    try: requests.post(SCRIPT_URL, json=payload, timeout=5)
-    except: pass
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
@@ -65,82 +55,77 @@ if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_wi
 
 tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
 
-# --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     sel_y = st.selectbox("Jahr wählen", [2026, 2027, 2028, 2029], index=0)
+    
     sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
     serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r[0]))
-    fix_sum = sum(st.session_state.fix_vals)
-    st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
-    m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and str(sel_y) in str(r[0]))
-    f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and str(sel_y) in str(r[0]))
-    st.write(f"🧔 Marc: CHF {m_sum:,.2f}")
-    st.write(f"👩 Fabienne: CHF {f_sum:,.2f}")
+    fix_s = sum(st.session_state.fix_vals)
+    
+    st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_s):,.2f}")
+    st.write(f"🧔 Marc: CHF {sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=='Marc' and str(sel_y) in str(r[0])):,.2f}")
+    st.write(f"👩 Fabienne: CHF {sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=='Fabienne' and str(sel_y) in str(r[0])):,.2f}")
     st.divider()
     st.markdown(f"⛽ Benzin: <span class='gold-price'>CHF {sprit:,.2f}</span> | ⚙️ Service: <span class='gold-price'>CHF {serv:,.2f}</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ⛽ TANKEN ---
 with tab2:
     if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
         st.markdown("### ⛽ Neuer Tankstopp")
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
-        lit = st.number_input("Liter", step=0.1, format="%.2f")
-        pr = st.number_input("CHF/L", value=2.15, format="%.2f")
+        lit = st.number_input("Liter", step=0.1)
+        pr = st.number_input("CHF/L", value=2.15)
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
-        if st.form_submit_button("EINTRAG SPEICHERN"):
+        if st.form_submit_button("SPEICHERN"):
             new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
-            fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
+            requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"append","values":new})
+            st.session_state.tank_data.append(new)
             st.rerun()
-    st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
         c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
-            fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
+            requests.post(SCRIPT_URL, json={"sheet":"tanken","method":"delete","index":idx})
+            st.session_state.tank_data.pop(idx)
             st.rerun()
 
-# --- 💰 FINANZEN ---
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
-    # Nutze Session State direkt für die Anzeige
-    v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f", key="fix_1")
-    n_s = st.number_input("Steuern", value=v[1], format="%.2f", key="fix_2")
-    n_v = st.number_input("Versicherung", value=v[2], format="%.2f", key="fix_3")
-    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f", key="fix_4")
+    # Hier werden die Werte direkt aus dem State geladen, ohne Umwege
+    n_ü = st.number_input("Überwintern", value=st.session_state.fix_vals[0])
+    n_s = st.number_input("Steuern", value=st.session_state.fix_vals[1])
+    n_v = st.number_input("Versicherung", value=st.session_state.fix_vals[2])
+    n_b = st.number_input("Bootsplatz", value=st.session_state.fix_vals[3])
     
-    if st.button("EINTRAG SPEICHERN", key="btn_save_fix"):
+    if st.button("FIXKOSTEN SPEICHERN"):
         new_v = [n_ü, n_s, n_v, n_b]
-        # Update Session State VOR dem Sync, damit es lokal sofort bleibt
+        requests.post(SCRIPT_URL, json={"sheet":"fixkosten","method":"update","values":new_v})
         st.session_state.fix_vals = new_v
-        fast_sync({"sheet":"fixkosten","method":"update","values":new_v}, "fix_vals", "update")
-        st.success("Werte lokal gespeichert & Synchronisation gestartet!")
-        # Kein st.rerun hier, damit die Werte in den Feldern nicht zurückspringen
-    
+        st.success("Gespeichert!")
+        st.rerun()
     st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ⚙️ SERVICE ---
 with tab4:
     if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
     with st.form("s_form", clear_on_submit=True):
         st.markdown("### ⚙️ Service")
         d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         arb = st.text_input("Was wurde gemacht?")
-        kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
-        if st.form_submit_button("EINTRAG SPEICHERN"):
+        kost = st.number_input("Kosten CHF", step=10.0)
+        if st.form_submit_button("SPEICHERN"):
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
-            fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
+            requests.post(SCRIPT_URL, json={"sheet":"service","method":"append","values":new_s})
+            st.session_state.serv_data.append(new_s)
             st.rerun()
-    st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
         c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
-            fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
+            requests.post(SCRIPT_URL, json={"sheet":"service","method":"delete","index":idx})
+            st.session_state.serv_data.pop(idx)
             st.rerun()
