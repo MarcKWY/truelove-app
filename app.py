@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -13,6 +12,13 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
+    /* NUR DIESER TEIL WURDE GEÄNDERT: Header & Katzen-Logo dunkel/unsichtbar */
+    header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
+        background-color: #050A14 !important; 
+        color: #050A14 !important;
+        display: none !important;
+    }
+    
     /* Alles auf WEISS setzen */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     
@@ -40,7 +46,6 @@ st.markdown("""
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
     /* --- DIE RADIKALE BUTTON-LÖSUNG --- */
-    /* Erwischt alle Buttons (normale und Form-Submit) */
     .stApp div[data-testid="stForm"] button, 
     .stApp button[kind="secondary"], 
     .stApp button[kind="primaryFormSubmit"] {
@@ -54,7 +59,7 @@ st.markdown("""
         display: block !important;
     }
     
-    /* AUSNAHME: Lösch-Buttons (Wir nutzen den Key, um sie wieder rot/transparent zu machen) */
+    /* AUSNAHME: Lösch-Buttons */
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
