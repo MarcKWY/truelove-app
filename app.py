@@ -33,10 +33,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- DATEN-LOGIK ---
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60) # Kurzer Cache, damit Änderungen im Excel schnell sichtbar sind
 def load_all_data(sheet):
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
+        # v Parameter verhindert Cache-Probleme bei Google
+        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}&v={datetime.now().timestamp()}", timeout=10)
         return r.json()
     except: return []
 
@@ -46,18 +47,18 @@ if 'tank_data' not in st.session_state:
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
-if 'fix_vals' not in st.session_state:
-    raw = load_all_data("fixkosten")
-    if len(raw) > 0:
-        try: st.session_state.fix_vals = [float(x) for x in raw[:4]]
-        except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-    else:
-        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+
+# Fixkosten werden bei jedem Neuladen frisch aus Google Sheets gezogen
+raw_fix = load_all_data("fixkosten")
+if raw_fix and len(raw_fix) > 0:
+    try: st.session_state.fix_vals = [float(x) for x in raw_fix[:4]]
+    except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+else:
+    st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
 def fast_sync(payload, local_key, action="append", idx=None):
     if action == "append": st.session_state[local_key].append(payload["values"])
     elif action == "delete": st.session_state[local_key].pop(idx)
-    elif action == "update": st.session_state.fix_vals = payload["values"]
     try: requests.post(SCRIPT_URL, json=payload, timeout=5)
     except: pass
     st.cache_data.clear()
@@ -109,20 +110,23 @@ with tab2:
 
 # --- 💰 FINANZEN ---
 with tab3:
-    st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><h3>💰 Aktuelle Fixkosten</h3>", unsafe_allow_html=True)
+    st.info("Änderungen an den Fixkosten bitte direkt in der Google-Tabelle vornehmen.")
     v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
-    if st.button("EINTRAG SPEICHERN"):
-        new_v = [n_ü, n_s, n_v, n_b]
-        # FIX: Erst lokal speichern, dann zu Google schicken
-        st.session_state.fix_vals = new_v
-        fast_sync({"sheet":"fixkosten","method":"update","values":new_v}, "fix_vals", "update")
-        st.success("Werte gespeichert!")
-        st.rerun() # Zwingt die App, die Anzeige sofort zu aktualisieren
-    st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
+    
+    col1, col2 = st.columns(2)
+    col1.write("**Überwintern:**")
+    col1.write("**Steuern:**")
+    col1.write("**Versicherung:**")
+    col1.write("**Bootsplatz:**")
+    
+    col2.markdown(f"<span class='gold-price'>CHF {v[0]:,.2f}</span>", unsafe_allow_html=True)
+    col2.markdown(f"<span class='gold-price'>CHF {v[1]:,.2f}</span>", unsafe_allow_html=True)
+    col2.markdown(f"<span class='gold-price'>CHF {v[2]:,.2f}</span>", unsafe_allow_html=True)
+    col2.markdown(f"<span class='gold-price'>CHF {v[3]:,.2f}</span>", unsafe_allow_html=True)
+    
+    st.divider()
+    st.markdown(f"**Total Fixkosten: CHF {sum(v):,.2f}**")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⚙️ SERVICE ---
