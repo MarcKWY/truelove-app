@@ -38,8 +38,8 @@ st.markdown("""
     /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* ALLE Speicher-Buttons in GOLD */
-    .stButton > button {
+    /* RADIKALE LÖSUNG FÜR ALLE SPEICHER-BUTTONS (Inkl. Forms) */
+    button[kind="primaryFormSubmit"], button[kind="secondary"] {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
         font-weight: bold !important;
@@ -49,7 +49,7 @@ st.markdown("""
         border: none !important;
     }
     
-    /* NUR Lösch-Buttons bleiben dezent rot umrandet */
+    /* NUR Lösch-Buttons (Buttons mit Mülleimer-Key) bleiben dezent rot */
     .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
@@ -100,16 +100,16 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 # --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    sel_y = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
+    sel_y = st.selectbox("Jahr wählen",, index=2)
     
-    sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
-    serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r[0]))
+    sprit = sum(float(r) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r))
+    serv = sum(float(r) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r))
     fix_sum = sum(st.session_state.fix_vals)
     
     st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
     
-    m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and str(sel_y) in str(r[0]))
-    f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and str(sel_y) in str(r[0]))
+    m_sum = sum(float(r) for r in st.session_state.tank_data if len(r)>4 and r=="Marc" and str(sel_y) in str(r))
+    f_sum = sum(float(r) for r in st.session_state.tank_data if len(r)>4 and r=="Fabienne" and str(sel_y) in str(r))
     
     st.write(f"🧔 Marc: CHF {m_sum:,.2f}")
     st.write(f"👩 Fabienne: CHF {f_sum:,.2f}")
@@ -135,7 +135,7 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
+        c1.markdown(f"📅 {r} | {float(r):.2f}L | <span class='gold-price'>CHF {float(r):,.2f}</span> ({r})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
             st.rerun()
@@ -144,10 +144,10 @@ with tab2:
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], step=50.0, format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], step=10.0, format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], step=10.0, format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], step=50.0, format="%.2f")
+    n_ü = st.number_input("Überwintern", value=v, step=50.0, format="%.2f")
+    n_s = st.number_input("Steuern", value=v, step=10.0, format="%.2f")
+    n_v = st.number_input("Versicherung", value=v, step=10.0, format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=v, step=50.0, format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
     st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
@@ -170,7 +170,7 @@ with tab4:
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
+        c1.markdown(f"📅 {r} | {r} | <span class='gold-price'>CHF {float(r):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
             fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
             st.rerun()
