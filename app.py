@@ -9,7 +9,6 @@ st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="�
 
 # DEINE FESTE URL
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec"
-
 st.markdown("""
     <style>
     /* Grund-Design: Alles auf WEISS setzen */
@@ -39,28 +38,34 @@ st.markdown("""
         color: #FFFFFF !important; 
     }
 
+    /* FIX: Eingabefelder und Dropdowns (Schrift schwarz für Lesbarkeit beim Wählen) */
+    input, select, div[data-baseweb="select"] {
+        color: #000000 !important;
+    }
+
     /* Tabs Design */
     .stTabs [data-baseweb="tab"] { color: #FFFFFF !important; }
     .stTabs [aria-selected="true"] p { color: #D4AF37 !important; }
 
-    /* Goldener Speicher-Button (EINTRAG SPEICHERN) */
-    div.stButton > button {
+    /* ALLE Speicher-Buttons (Goldener Look) */
+    .stButton > button {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
         font-weight: bold !important;
-        width: 100%;
-        border-radius: 10px;
-        height: 3.5em;
-        border: none;
+        width: 100% !important;
+        border-radius: 10px !important;
+        height: 3.5em !important;
+        border: none !important;
     }
     
-    /* Ausnahme: Lösch-Button (Roter Rahmen, kein Hintergrund) */
+    /* AUSNAHME: Lösch-Button (Roter Rahmen, kein Gold) */
     .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
-        height: auto !important;
+        height: 2.5em !important;
         width: auto !important;
+        font-size: 11px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -106,14 +111,14 @@ with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     sel_y = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
     
-    sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
-    serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r[0]))
+    sprit = sum(float(r) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r))
+    serv = sum(float(r) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r))
     fix_sum = sum(st.session_state.fix_vals)
     
     st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
     
-    m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and str(sel_y) in str(r[0]))
-    f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and str(sel_y) in str(r[0]))
+    m_sum = sum(float(r) for r in st.session_state.tank_data if len(r)>4 and r=="Marc" and str(sel_y) in str(r))
+    f_sum = sum(float(r) for r in st.session_state.tank_data if len(r)>4 and r=="Fabienne" and str(sel_y) in str(r))
     
     st.markdown(f"🧔 Marc: <span class='gold-price'>CHF {m_sum:,.2f}</span>", unsafe_allow_html=True)
     st.markdown(f"👩 Fabienne: <span class='gold-price'>CHF {f_sum:,.2f}</span>", unsafe_allow_html=True)
@@ -139,7 +144,7 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
+        c1.markdown(f"📅 {r} | {float(r):.2f}L | <span class='gold-price'>CHF {float(r):,.2f}</span> ({r})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
             st.rerun()
@@ -148,10 +153,10 @@ with tab2:
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
+    n_ü = st.number_input("Überwintern", value=v, format="%.2f")
+    n_s = st.number_input("Steuern", value=v, format="%.2f")
+    n_v = st.number_input("Versicherung", value=v, format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=v, format="%.2f")
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
     st.markdown(f"Total: <span class='gold-price'>CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}</span>", unsafe_allow_html=True)
@@ -174,7 +179,6 @@ with tab4:
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
+        c1.markdown(f"📅 {r} | {r} | <span class='gold-price'>CHF {float(r):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
             fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
-            st.rerun()
