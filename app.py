@@ -8,7 +8,7 @@ import os
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
 # HIER DEINEN LINK EINTRAGEN
-SCRIPT_URL = "DEINE_GOOGLE_URL_HIER" 
+SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec" 
 
 st.markdown("""
     <style>
@@ -20,13 +20,14 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNKTIONEN (OPTIMIERT FÜR SPEED) ---
+# --- FUNKTIONEN ---
 @st.cache_data(ttl=300)
 def fetch_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
         return r.json()
-    except: return []
+    except:
+        return []
 
 def send_request(payload):
     try:
@@ -46,6 +47,7 @@ serv_list = raw_serv[1:] if len(raw_serv) > 1 else []
 
 raw_fix = fetch_data("fixkosten")
 if len(raw_fix) > 1:
+    # Nimmt die Werte aus der zweiten Zeile der fixkosten-Tabelle
     f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
 else:
     f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
@@ -78,7 +80,6 @@ with tab1:
 with tab2:
     if os.path.exists("tanken.jpg"): 
         st.image("tanken.jpg", width=250)
-        
     with st.form("tank_form"):
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         lit = st.number_input("Liter", min_value=0.0, format="%.2f")
@@ -91,19 +92,11 @@ with tab2:
     if tank_list:
         for i, r in enumerate(reversed(tank_list)):
             c1, c2 = st.columns([0.8, 0.2])
-            # r[0]=Datum, r[1]=Liter, r[3]=Total, r[4]=Wer
             c1.write(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** ({r[4]})")
             if c2.button("🗑️", key=f"del_t_{i}"):
                 send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
     else:
-        st.info("Noch keine Tank-Einträge vorhanden.")
-    
-    st.markdown("### Historie")
-    for i, r in enumerate(reversed(tank_list)):
-        c1, c2 = st.columns([4, 1])
-        c1.write(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** ({r[4]})")
-        if c2.button("🗑️", key=f"del_t_{i}"):
-            send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
+        st.info("Keine Daten vorhanden.")
 
 # --- 💰 FINANZEN ---
 with tab3:
@@ -120,7 +113,6 @@ with tab3:
 with tab4:
     if os.path.exists("motor.jpg"): 
         st.image("motor.jpg", width=250)
-    
     with st.form("serv_form"):
         d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         arb = st.text_input("Was wurde gemacht?")
@@ -136,10 +128,4 @@ with tab4:
             if c2.button("🗑️", key=f"del_s_{i}"):
                 send_request({"sheet":"service","method":"delete","index": len(serv_list)-1-i})
     else:
-        st.info("Noch keine Service-Einträge vorhanden.")
-    
-    st.markdown("### Historie")
-    for i, r in enumerate(reversed(serv_list)):
-        c1, c2 = st.columns([4, 1])
-        c1.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
-        if c2.button("🗑️", key=f"del_s_{i}"):
+        st.info("Keine Daten vorhanden.")
