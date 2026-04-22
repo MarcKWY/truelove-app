@@ -40,7 +40,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATEN-LOGIK (MAX SPEED) ---
+# --- DATEN-LOGIK ---
 @st.cache_data(ttl=600)
 def load_all_data(sheet):
     try:
@@ -117,7 +117,7 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        # Datum Anzeige: Tag.Monat.Jahr
+        # Anzeige Datum im Format Tag.Monat.Jahr
         c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
