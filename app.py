@@ -14,9 +14,10 @@ st.markdown("""
     <style>
     .stApp { background-color: #050A14; color: #FFFFFF; }
     .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; margin-bottom: 0px; }
+    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.8; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
-    /* Goldene Schrift für alle CHF Beträge */
+    /* Goldene Schrift für CHF Beträge */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
     /* Goldener Speicher-Button mit schwarzer Schrift */
@@ -30,7 +31,7 @@ st.markdown("""
         height: 3.5em;
     }
     
-    /* Roter Lösch-Button */
+    /* Diskreter Lösch-Button */
     .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
@@ -41,7 +42,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- DATEN-LOGIK ---
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=300)
 def load_all_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
@@ -58,10 +59,9 @@ if 'serv_data' not in st.session_state:
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
     if len(raw) > 0:
-        try: st.session_state.fix_vals = [float(x) for x in raw[0][:4]]
+        try: st.session_state.fix_vals = [float(x) for x in raw[:4]]
         except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-    else:
-        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+    else: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
 def fast_sync(payload, local_key, action="append", idx=None):
     if action == "append": st.session_state[local_key].append(payload["values"])
@@ -73,7 +73,10 @@ def fast_sync(payload, local_key, action="append", idx=None):
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
-if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
+st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
+
+if os.path.exists("boot_gross.jpg"): 
+    st.image("boot_gross.jpg", use_container_width=True)
 
 tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
 
@@ -108,7 +111,6 @@ with tab2:
         pr = st.number_input("CHF/L", value=2.15, format="%.2f")
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
         if st.form_submit_button("EINTRAG SPEICHERN"):
-            # Speichert Datum als Tag.Monat.Jahr
             new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
             fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
             st.rerun()
@@ -117,7 +119,6 @@ with tab2:
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
-        # Anzeige Datum im Format Tag.Monat.Jahr
         c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
             fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
@@ -145,7 +146,6 @@ with tab4:
         arb = st.text_input("Was wurde gemacht?")
         kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
         if st.form_submit_button("EINTRAG SPEICHERN"):
-            # Speichert Datum als Tag.Monat.Jahr
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
             fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
             st.rerun()
