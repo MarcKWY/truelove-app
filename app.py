@@ -12,48 +12,91 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 st.markdown("""
     <style>
     header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
+        background-color: #050A14 !important; 
+        color: #050A14 !important;
         display: none !important;
     }
+    
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
-    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
+    
+    .truelove-title { 
+        font-family: 'Georgia', serif; 
+        font-size: 34px; 
+        font-weight: bold; 
+        color: #D4AF37 !important; 
+        text-align: center; 
+        margin-bottom: 0px; 
+    }
+    
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
+    
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
+    
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
+
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
-    .stApp div[data-testid="stForm"] button, .stApp button[kind="secondary"], .stApp button[kind="primaryFormSubmit"] {
-        background-color: #D4AF37 !important; color: #050A14 !important; font-weight: bold !important; width: 100% !important; border-radius: 10px !important; height: 3.5em !important; border: none !important; display: block !important;
+    
+    .stApp div[data-testid="stForm"] button, 
+    .stApp button[kind="secondary"], 
+    .stApp button[kind="primaryFormSubmit"] {
+        background-color: #D4AF37 !important;
+        color: #050A14 !important;
+        font-weight: bold !important;
+        width: 100% !important;
+        border-radius: 10px !important;
+        height: 3.5em !important;
+        border: none !important;
+        display: block !important;
     }
-    .stApp button[key^="dt_"], .stApp button[key^="ds_"] { background-color: transparent !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important; height: 2.2em !important; width: auto !important; font-weight: normal !important; }
+    
+    .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
+        background-color: transparent !important;
+        color: #ff4b4b !important;
+        border: 1px solid #ff4b4b !important;
+        height: 2.2em !important;
+        width: auto !important;
+        font-weight: normal !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # --- DATEN-LOGIK ---
+@st.cache_data(ttl=300)
 def load_all_data(sheet):
     try:
-        # v Parameter erzwingt frische Daten von Google
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}&v={datetime.now().timestamp()}", timeout=10)
+        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
         return r.json()
     except: return []
 
-# Session State Initialisierung
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
+
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
+
+# 🔧 FIX HIER
 if 'fix_vals' not in st.session_state:
-    raw_fix = load_all_data("fixkosten")
-    if raw_fix and len(raw_fix) >= 4:
-        st.session_state.fix_vals = [float(x) for x in raw_fix[:4]]
+    raw = load_all_data("fixkosten")
+    if len(raw) > 1:
+        try:
+            last_row = raw[-1]  # letzte gespeicherte Zeile nehmen
+            st.session_state.fix_vals = [float(x) for x in last_row[:4]]
+        except:
+            st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
     else:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
-def sync_data(payload):
-    try: requests.post(SCRIPT_URL, json=payload, timeout=10)
+def fast_sync(payload, local_key, action="append", idx=None):
+    if action == "append": st.session_state[local_key].append(payload["values"])
+    elif action == "delete": st.session_state[local_key].pop(idx)
+    elif action == "update": st.session_state.fix_vals = payload["values"]
+    try: requests.post(SCRIPT_URL, json=payload, timeout=5)
     except: pass
+    st.cache_data.clear()
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
@@ -72,8 +115,10 @@ with tab1:
     fix_sum = sum(st.session_state.fix_vals)
     
     st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
+    
     m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and str(sel_y) in str(r[0]))
     f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and str(sel_y) in str(r[0]))
+    
     st.write(f"🧔 Marc: CHF {m_sum:,.2f}")
     st.write(f"👩 Fabienne: CHF {f_sum:,.2f}")
     st.divider()
@@ -91,8 +136,7 @@ with tab2:
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
         if st.form_submit_button("EINTRAG SPEICHERN"):
             new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
-            st.session_state.tank_data.append(new)
-            sync_data({"sheet":"tanken","method":"append","values":new})
+            fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
             st.rerun()
     
     st.markdown("### Historie")
@@ -101,8 +145,7 @@ with tab2:
         c1, c2 = st.columns([0.85, 0.15])
         c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
-            sync_data({"sheet":"tanken","method":"delete","index":idx})
-            st.session_state.tank_data.pop(idx)
+            fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
             st.rerun()
 
 # --- 💰 FINANZEN ---
@@ -113,15 +156,9 @@ with tab3:
     n_s = st.number_input("Steuern", value=v[1], format="%.2f")
     n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
     n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
-    
     if st.button("EINTRAG SPEICHERN"):
-        new_v = [n_ü, n_s, n_v, n_b]
-        st.session_state.fix_vals = new_v
-        sync_data({"sheet":"fixkosten","method":"update","values":new_v})
-        st.success("Gespeichert!")
-        st.rerun()
-        
-    st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
+        fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
+    st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⚙️ SERVICE ---
@@ -134,8 +171,7 @@ with tab4:
         kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
         if st.form_submit_button("EINTRAG SPEICHERN"):
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
-            st.session_state.serv_data.append(new_s)
-            sync_data({"sheet":"service","method":"append","values":new_s})
+            fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
             st.rerun()
             
     st.markdown("### Historie")
@@ -144,6 +180,5 @@ with tab4:
         c1, c2 = st.columns([0.85, 0.15])
         c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
-            sync_data({"sheet":"service","method":"delete","index":idx})
-            st.session_state.serv_data.pop(idx)
+            fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
             st.rerun()
