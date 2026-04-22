@@ -29,36 +29,34 @@ st.markdown("""
 
 # --- HILFSFUNKTIONEN ---
 def safe_float(val):
-    try:
-        if isinstance(val, list): val = val[0]
-        return float(str(val).replace('CHF', '').replace("'", "").strip())
+    try: return float(str(val).replace('CHF', '').replace("'", "").strip())
     except: return 0.0
 
 def clean_date(val):
-    """ Entfernt Uhrzeiten und unnötigen Text vom Datum """
-    d_str = str(val).split('T')[0].split(' ')[0]
-    return d_str
+    return str(val).split('T')[0].split(' ')[0]
 
-def load_data(sheet):
+def load_data_fresh(sheet):
+    """ Lädt Daten IMMER frisch ohne Cache """
     try:
-        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
+        r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=15)
         return r.json()
     except: return []
 
-# --- DATEN INITIALISIEREN ---
+# --- DATEN INITIALISIEREN (OHNE CACHE FÜR FIXKOSTEN) ---
 if 'tank_data' not in st.session_state:
-    raw = load_data("tanken")
-    st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
+    raw_tank = load_data_fresh("tanken")
+    st.session_state.tank_data = raw_tank[1:] if len(raw_tank) > 1 else []
+
 if 'serv_data' not in st.session_state:
-    raw = load_data("service")
-    st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
-if 'fix_vals' not in st.session_state:
-    raw = load_data("fixkosten")
-    if raw and len(raw) > 0:
-        # Falls Google die Zeile verschachtelt schickt
-        source = raw[0] if isinstance(raw[0], list) else raw
-        st.session_state.fix_vals = [safe_float(x) for x in source[:4]]
-    else:
+    raw_serv = load_data_fresh("service")
+    st.session_state.serv_data = raw_serv[1:] if len(raw_serv) > 1 else []
+
+# FIXKOSTEN IMMER FRISCH LADEN BEIM START/RELOAD
+raw_fix = load_data_fresh("fixkosten")
+if raw_fix and len(raw_fix) > 0:
+    st.session_state.fix_vals = [safe_float(x) for x in raw_fix[:4]]
+else:
+    if 'fix_vals' not in st.session_state:
         st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
 # --- UI ---
@@ -114,9 +112,11 @@ with tab3:
     n_b = st.number_input("Bootsplatz", value=v[3])
     if st.button("FIXKOSTEN SPEICHERN"):
         new_v = [n_ü, n_s, n_v, n_b]
+        # Sofortiger Post an Google
         requests.post(SCRIPT_URL, json={"sheet":"fixkosten","method":"update","values":new_v})
+        # Sofortiges Update im lokalen Speicher
         st.session_state.fix_vals = new_v
-        st.success("Gespeichert!")
+        st.success("Erfolgreich in Google Sheets gespeichert!")
         st.rerun()
     st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
