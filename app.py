@@ -12,17 +12,15 @@ SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfN
 
 st.markdown("""
     <style>
-    /* NUR DIESER TEIL WURDE GEÄNDERT: Header & Katzen-Logo dunkel/unsichtbar */
+    /* Header & Katzen-Logo dunkel/unsichtbar */
     header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
         background-color: #050A14 !important; 
         color: #050A14 !important;
         display: none !important;
     }
     
-    /* Alles auf WEISS setzen */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     
-    /* TITEL IN GOLD */
     .truelove-title { 
         font-family: 'Georgia', serif; 
         font-size: 34px; 
@@ -35,17 +33,13 @@ st.markdown("""
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
-    /* Metric und normale Texte auf WEISS */
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
     
-    /* Dropdown-Texte beim Auswählen schwarz */
     div[data-baseweb="select"] * { color: #000000 !important; }
     div[data-baseweb="popover"] * { color: #000000 !important; }
 
-    /* GOLD nur für die CHF-Beträge in der Historie */
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
-    /* --- DIE RADIKALE BUTTON-LÖSUNG --- */
     .stApp div[data-testid="stForm"] button, 
     .stApp button[kind="secondary"], 
     .stApp button[kind="primaryFormSubmit"] {
@@ -59,7 +53,6 @@ st.markdown("""
         display: block !important;
     }
     
-    /* AUSNAHME: Lösch-Buttons */
     .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
@@ -111,7 +104,8 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 # --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    sel_y = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
+    # NUR HIER ANGEPASST: Start bei 2026, geht nach oben
+    sel_y = st.selectbox("Jahr wählen", [2026, 2027, 2028, 2029], index=0)
     
     sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
     serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r[0]))
