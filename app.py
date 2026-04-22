@@ -68,7 +68,8 @@ def load_all_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
         return r.json()
-    except: return []
+    except:
+        return []
 
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
@@ -78,30 +79,50 @@ if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
 
-# 🔧 FIX HIER
+# 🔥 ROBUSTER FIX FÜR FIXKOSTEN
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
-    if len(raw) > 1:
+    
+    def parse_fixkosten(data):
         try:
-            last_row = raw[-1]  # letzte gespeicherte Zeile nehmen
-            st.session_state.fix_vals = [float(x) for x in last_row[:4]]
+            # von unten nach oben durchgehen → letzte gültige Zeile nehmen
+            for row in reversed(data):
+                if len(row) >= 4:
+                    vals = []
+                    valid = True
+                    for x in row[:4]:
+                        try:
+                            vals.append(float(str(x).replace(",", ".")))
+                        except:
+                            valid = False
+                            break
+                    if valid:
+                        return vals
         except:
-            st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-    else:
-        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
+            pass
+        
+        return [2200.0, 350.0, 1150.0, 1500.0]
+    
+    st.session_state.fix_vals = parse_fixkosten(raw)
 
 def fast_sync(payload, local_key, action="append", idx=None):
-    if action == "append": st.session_state[local_key].append(payload["values"])
-    elif action == "delete": st.session_state[local_key].pop(idx)
-    elif action == "update": st.session_state.fix_vals = payload["values"]
-    try: requests.post(SCRIPT_URL, json=payload, timeout=5)
-    except: pass
+    if action == "append":
+        st.session_state[local_key].append(payload["values"])
+    elif action == "delete":
+        st.session_state[local_key].pop(idx)
+    elif action == "update":
+        st.session_state.fix_vals = payload["values"]
+    try:
+        requests.post(SCRIPT_URL, json=payload, timeout=5)
+    except:
+        pass
     st.cache_data.clear()
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
-if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
+if os.path.exists("boot_gross.jpg"):
+    st.image("boot_gross.jpg", use_container_width=True)
 
 tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
 
@@ -127,7 +148,8 @@ with tab1:
 
 # --- ⛽ TANKEN ---
 with tab2:
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
+    if os.path.exists("tanken.jpg"):
+        st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
         st.markdown("### ⛽ Neuer Tankstopp")
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
@@ -163,7 +185,8 @@ with tab3:
 
 # --- ⚙️ SERVICE ---
 with tab4:
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+    if os.path.exists("motor.jpg"):
+        st.image("motor.jpg", width=250)
     with st.form("s_form", clear_on_submit=True):
         st.markdown("### ⚙️ Service")
         d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
