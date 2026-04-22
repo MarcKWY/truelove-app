@@ -7,7 +7,7 @@ import os
 # --- SETUP & DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
-# HIER DEINEN LINK EINTRAGEN
+# DEINE FESTE SCRIPT URL
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec" 
 
 st.markdown("""
@@ -47,7 +47,6 @@ serv_list = raw_serv[1:] if len(raw_serv) > 1 else []
 
 raw_fix = fetch_data("fixkosten")
 if len(raw_fix) > 1:
-    # Nimmt die Werte aus der zweiten Zeile der fixkosten-Tabelle
     f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
 else:
     f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
@@ -92,11 +91,12 @@ with tab2:
     if tank_list:
         for i, r in enumerate(reversed(tank_list)):
             c1, c2 = st.columns([0.8, 0.2])
+            # Index-Mapping: 0=Datum, 1=Liter, 2=Preis, 3=Total, 4=Wer
             c1.write(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** ({r[4]})")
             if c2.button("🗑️", key=f"del_t_{i}"):
                 send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
     else:
-        st.info("Keine Daten vorhanden.")
+        st.info("Keine Tankdaten vorhanden.")
 
 # --- 💰 FINANZEN ---
 with tab3:
@@ -124,8 +124,9 @@ with tab4:
     if serv_list:
         for i, r in enumerate(reversed(serv_list)):
             c1, c2 = st.columns([0.8, 0.2])
+            # Index-Mapping: 0=Datum, 1=Arbeit, 2=Kosten
             c1.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
             if c2.button("🗑️", key=f"del_s_{i}"):
                 send_request({"sheet":"service","method":"delete","index": len(serv_list)-1-i})
     else:
-        st.info("Keine Daten vorhanden.")
+        st.info("Keine Servicedaten vorhanden.")
