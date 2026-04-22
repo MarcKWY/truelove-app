@@ -103,10 +103,12 @@ with tab1:
 
 # --- ⛽ TANKEN ---
 with tab2:
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
+    if os.path.exists("tanken.jpg"): 
+        st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
         st.markdown("### ⛽ Neuer Tankstopp")
-        d = st.date_input("Datum", date.today())
+        # Deutsche Anzeige für das Auswahlfeld
+        d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         lit = st.number_input("Liter", step=0.1, format="%.2f")
         pr = st.number_input("CHF/L", value=2.15, format="%.2f")
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
@@ -139,10 +141,11 @@ with tab3:
 
 # --- ⚙️ SERVICE ---
 with tab4:
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+    if os.path.exists("motor.jpg"): 
+        st.image("motor.jpg", width=250)
     with st.form("s_form", clear_on_submit=True):
         st.markdown("### ⚙️ Service")
-        d_s = st.date_input("Datum", date.today())
+        d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
         arb = st.text_input("Was wurde gemacht?")
         kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
         if st.form_submit_button("EINTRAG SPEICHERN"):
