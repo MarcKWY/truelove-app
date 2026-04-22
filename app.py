@@ -4,14 +4,24 @@ import requests
 from datetime import datetime, date
 import os
 
-# --- SETUP ---
+# --- SETUP & DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
-# HIER DEINE URL EINTRAGEN
-SCRIPT_URL = "DEINE_GOOGLE_URL_HIER"
+# HIER DEINEN LINK EINTRAGEN
+SCRIPT_URL = "DEINE_GOOGLE_URL_HIER" 
 
-# --- SPEED-OPTIMIERUNG (CACHING) ---
-@st.cache_data(ttl=600) # Speichert Daten für 10 Minuten im Cache
+st.markdown("""
+    <style>
+    .stApp { background-color: #050A14; color: #FFFFFF; }
+    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; letter-spacing: 3px; margin-bottom: 0px; }
+    .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #E0E0E0; opacity: 0.8; letter-spacing: 2px; margin-bottom: 15px; }
+    .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
+    .gold-text { color: #D4AF37 !important; font-weight: bold; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- FUNKTIONEN (OPTIMIERT FÜR SPEED) ---
+@st.cache_data(ttl=300)
 def fetch_data(sheet):
     try:
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}", timeout=10)
@@ -19,14 +29,15 @@ def fetch_data(sheet):
     except: return []
 
 def send_request(payload):
-    with st.spinner('Speichere Daten...'):
-        try:
+    try:
+        with st.spinner('Verarbeite...'):
             requests.post(SCRIPT_URL, json=payload, timeout=10)
-            st.cache_data.clear() # Cache leeren, damit neue Daten geladen werden
+            st.cache_data.clear()
             st.rerun()
-        except: st.error("Fehler beim Speichern!")
+    except:
+        st.error("Verbindung zu Google fehlgeschlagen.")
 
-# --- DATEN INITIAL LADEN ---
+# --- DATEN LADEN ---
 raw_tank = fetch_data("tanken")
 tank_list = raw_tank[1:] if len(raw_tank) > 1 else []
 
@@ -34,57 +45,76 @@ raw_serv = fetch_data("service")
 serv_list = raw_serv[1:] if len(raw_serv) > 1 else []
 
 raw_fix = fetch_data("fixkosten")
-f_ü, f_s, f_v, f_b = (float(raw_fix[1][0]), float(raw_fix[1][1]), float(raw_fix[1][2]), float(raw_fix[1][3])) if len(raw_fix) > 1 else (2200.0, 350.0, 1150.0, 1500.0)
+if len(raw_fix) > 1:
+    f_ü, f_s, f_v, f_b = map(float, raw_fix[1][:4])
+else:
+    f_ü, f_s, f_v, f_b = 2200.0, 350.0, 1150.0, 1500.0
 
-# --- DESIGN & BILDER ---
-st.markdown("<h1 style='text-align: center; color: #D4AF37;'>TRUELOVE</h1>", unsafe_allow_html=True)
+# --- HEADER ---
+st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
+st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
 
-# Bild Logik: Zeigt Bild nur wenn Datei existiert
-if os.path.exists("boot_gross.jpg"):
+if os.path.exists("boot_gross.jpg"): 
     st.image("boot_gross.jpg", use_container_width=True)
 
 # --- NAVIGATION ---
-menu = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
+tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanzen", "⚙️ Service"])
 
 # --- 📋 ÜBERSICHT ---
-with menu[0]:
-    sel_year = st.selectbox("Jahr", [2024, 2025, 2026])
-    sprit = sum(float(r[3]) for r in tank_list if str(sel_year) in str(r[0]))
-    serv = sum(float(r[2]) for r in serv_list if str(sel_year) in str(r[0]))
-    total = sprit + serv + f_ü + f_s + f_v + f_b
+with tab1:
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    sel_year = st.selectbox("Jahr wählen", [2024, 2025, 2026, 2027], index=2)
+    y_str = str(sel_year)
     
-    st.metric("Gesamt CHF", f"{total:,.2f}")
-    st.write(f"⛽ Benzin: **{sprit:,.2f}** | ⚙️ Service: **{serv:,.2f}**")
+    sprit = sum(float(r[3]) for r in tank_list if len(r) > 3 and y_str in str(r[0]))
+    serv = sum(float(r[2]) for r in serv_list if len(r) > 2 and y_str in str(r[0]))
+    fix = f_ü + f_s + f_v + f_b
+    
+    st.metric(f"GESAMT {sel_year}", f"CHF {(sprit + serv + fix):,.2f}")
+    st.markdown(f"⛽ Benzin: <span class='gold-text'>CHF {sprit:,.2f}</span><br>⚙️ Service: <span class='gold-text'>CHF {serv:,.2f}</span><br>🏗️ Fixkosten: <span class='gold-text'>CHF {fix:,.2f}</span>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⛽ TANKEN ---
-with menu[1]:
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=300)
+with tab2:
+    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     with st.form("tank_form"):
-        d = st.date_input("Datum", date.today())
-        lit = st.number_input("Liter", step=0.1, format="%.2f")
-        pr = st.number_input("Preis CHF/L", value=2.15, format="%.2f")
-        wer = st.selectbox("Wer?", ["Marc", "Fabienne"])
-        if st.form_submit_button("Speichern"):
+        d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
+        lit = st.number_input("Liter", min_value=0.0, format="%.2f")
+        pr = st.number_input("CHF/L", value=2.15, format="%.2f")
+        wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
+        if st.form_submit_button("Eintragen"):
             send_request({"sheet":"tanken","method":"append","values":[d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]})
-
-    # Liste mit Löschfunktion
+    
+    st.markdown("### Historie")
     for i, r in enumerate(reversed(tank_list)):
-        col1, col2 = st.columns([4, 1])
-        col1.write(f"📅 {r[0]} | {float(r[1]):.2f}L | {float(r[3]):.2f} CHF")
-        if col2.button("🗑️", key=f"del_t_{i}"):
+        c1, c2 = st.columns([4, 1])
+        c1.write(f"📅 {r[0]} | {float(r[1]):.2f}L | **{float(r[3]):.2f} CHF** ({r[4]})")
+        if c2.button("🗑️", key=f"del_t_{i}"):
             send_request({"sheet":"tanken","method":"delete","index": len(tank_list)-1-i})
 
-# --- ⚙️ SERVICE ---
-with menu[3]:
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=300)
-    with st.form("serv_form"):
-        d_s = st.date_input("Datum", date.today())
-        txt = st.text_input("Was wurde gemacht?")
-        kost = st.number_input("Kosten", step=10.0, format="%.2f")
-        if st.form_submit_button("Eintragen"):
-            send_request({"sheet":"service","method":"append","values":[d_s.strftime("%d.%m.%Y"), txt, kost]})
+# --- 💰 FINANZEN ---
+with tab3:
+    st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
+    n_ü = st.number_input("Überwintern", value=f_ü, format="%.2f")
+    n_s = st.number_input("Steuern", value=f_s, format="%.2f")
+    n_v = st.number_input("Versicherung", value=f_v, format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=f_b, format="%.2f")
+    if st.button("Fixkosten speichern"):
+        send_request({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]})
+    st.markdown("</div>", unsafe_allow_html=True)
 
+# --- ⚙️ SERVICE ---
+with tab4:
+    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+    with st.form("serv_form"):
+        d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
+        arb = st.text_input("Was wurde gemacht?")
+        kost = st.number_input("Kosten CHF", min_value=0.0, format="%.2f")
+        if st.form_submit_button("Eintragen"):
+            send_request({"sheet":"service","method":"append","values":[d_s.strftime("%d.%m.%Y"), arb, kost]})
+    
+    st.markdown("### Historie")
     for i, r in enumerate(reversed(serv_list)):
-        col1, col2 = st.columns([4, 1])
-        col1.write(f"📅 {r[0]} | {r[1]} | {float(r[2]):.2f} CHF")
-        if col2.button("🗑️", key=f"del_s_{i}"):
+        c1, c2 = st.columns([4, 1])
+        c1.write(f"📅 {r[0]} | {r[1]} | **{float(r[2]):.2f} CHF**")
+        if c2.button("🗑️", key=f"del_s_{i}"):
