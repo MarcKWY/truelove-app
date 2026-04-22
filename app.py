@@ -7,14 +7,11 @@ import os
 # --- SETUP & DESIGN ---
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
-# DEINE FESTE URL
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MXh0XJXUp_f5shaxFXC-MfNvOw43pTcjgkKF3bKzQiztWjViKpRHq26cUjgjFUqtxQ/exec"
 
 st.markdown("""
     <style>
     header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
-        background-color: #050A14 !important; 
-        color: #050A14 !important;
         display: none !important;
     }
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
@@ -33,35 +30,30 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- DATEN-LOGIK ---
-@st.cache_data(ttl=60) # Kurzer Cache, damit Änderungen im Excel schnell sichtbar sind
 def load_all_data(sheet):
     try:
-        # v Parameter verhindert Cache-Probleme bei Google
+        # v Parameter erzwingt frische Daten von Google
         r = requests.get(f"{SCRIPT_URL}?sheet={sheet}&v={datetime.now().timestamp()}", timeout=10)
         return r.json()
     except: return []
 
+# Session State Initialisierung
 if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
     raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
+if 'fix_vals' not in st.session_state:
+    raw_fix = load_all_data("fixkosten")
+    if raw_fix and len(raw_fix) >= 4:
+        st.session_state.fix_vals = [float(x) for x in raw_fix[:4]]
+    else:
+        st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
 
-# Fixkosten werden bei jedem Neuladen frisch aus Google Sheets gezogen
-raw_fix = load_all_data("fixkosten")
-if raw_fix and len(raw_fix) > 0:
-    try: st.session_state.fix_vals = [float(x) for x in raw_fix[:4]]
-    except: st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-else:
-    st.session_state.fix_vals = [2200.0, 350.0, 1150.0, 1500.0]
-
-def fast_sync(payload, local_key, action="append", idx=None):
-    if action == "append": st.session_state[local_key].append(payload["values"])
-    elif action == "delete": st.session_state[local_key].pop(idx)
-    try: requests.post(SCRIPT_URL, json=payload, timeout=5)
+def sync_data(payload):
+    try: requests.post(SCRIPT_URL, json=payload, timeout=10)
     except: pass
-    st.cache_data.clear()
 
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
@@ -74,9 +66,11 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     sel_y = st.selectbox("Jahr wählen", [2026, 2027, 2028, 2029], index=0)
+    
     sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
     serv = sum(float(r[2]) for r in st.session_state.serv_data if len(r)>2 and str(sel_y) in str(r[0]))
     fix_sum = sum(st.session_state.fix_vals)
+    
     st.metric(f"GESAMT {sel_y}", f"CHF {(sprit + serv + fix_sum):,.2f}")
     m_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Marc" and str(sel_y) in str(r[0]))
     f_sum = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>4 and r[4]=="Fabienne" and str(sel_y) in str(r[0]))
@@ -97,36 +91,37 @@ with tab2:
         wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
         if st.form_submit_button("EINTRAG SPEICHERN"):
             new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
-            fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
+            st.session_state.tank_data.append(new)
+            sync_data({"sheet":"tanken","method":"append","values":new})
             st.rerun()
+    
     st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
         c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"dt_{idx}"):
-            fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
+            sync_data({"sheet":"tanken","method":"delete","index":idx})
+            st.session_state.tank_data.pop(idx)
             st.rerun()
 
 # --- 💰 FINANZEN ---
 with tab3:
-    st.markdown("<div class='card'><h3>💰 Aktuelle Fixkosten</h3>", unsafe_allow_html=True)
-    st.info("Änderungen an den Fixkosten bitte direkt in der Google-Tabelle vornehmen.")
+    st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
+    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
+    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
+    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
+    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
     
-    col1, col2 = st.columns(2)
-    col1.write("**Überwintern:**")
-    col1.write("**Steuern:**")
-    col1.write("**Versicherung:**")
-    col1.write("**Bootsplatz:**")
-    
-    col2.markdown(f"<span class='gold-price'>CHF {v[0]:,.2f}</span>", unsafe_allow_html=True)
-    col2.markdown(f"<span class='gold-price'>CHF {v[1]:,.2f}</span>", unsafe_allow_html=True)
-    col2.markdown(f"<span class='gold-price'>CHF {v[2]:,.2f}</span>", unsafe_allow_html=True)
-    col2.markdown(f"<span class='gold-price'>CHF {v[3]:,.2f}</span>", unsafe_allow_html=True)
-    
-    st.divider()
-    st.markdown(f"**Total Fixkosten: CHF {sum(v):,.2f}**")
+    if st.button("EINTRAG SPEICHERN"):
+        new_v = [n_ü, n_s, n_v, n_b]
+        st.session_state.fix_vals = new_v
+        sync_data({"sheet":"fixkosten","method":"update","values":new_v})
+        st.success("Gespeichert!")
+        st.rerun()
+        
+    st.markdown(f"Total: CHF {sum(st.session_state.fix_vals):,.2f}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⚙️ SERVICE ---
@@ -139,13 +134,16 @@ with tab4:
         kost = st.number_input("Kosten CHF", step=10.0, format="%.2f")
         if st.form_submit_button("EINTRAG SPEICHERN"):
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
-            fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
+            st.session_state.serv_data.append(new_s)
+            sync_data({"sheet":"service","method":"append","values":new_s})
             st.rerun()
+            
     st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.serv_data)):
         idx = len(st.session_state.serv_data) - 1 - i
         c1, c2 = st.columns([0.85, 0.15])
         c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
         if c2.button("🗑️", key=f"ds_{idx}"):
-            fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
+            sync_data({"sheet":"service","method":"delete","index":idx})
+            st.session_state.serv_data.pop(idx)
             st.rerun()
