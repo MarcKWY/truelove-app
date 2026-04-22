@@ -132,20 +132,7 @@ with tab1:
     st.markdown(f"⛽ Benzin: <span class='gold-price'>CHF {sprit:,.2f}</span> | ⚙️ Service: <span class='gold-price'>CHF {serv:,.2f}</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ⛽ TANKEN ---
-with tab2:
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
-    with st.form("t_form", clear_on_submit=True):
-        st.markdown("### ⛽ Neuer Tankstopp")
-        d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
-        lit = st.number_input("Liter", step=0.1, format="%.2f")
-        pr = st.number_input("CHF/L", value=2.15, format="%.2f")
-        wer = st.radio("Zahler", ["Marc", "Fabienne"], horizontal=True)
-        if st.form_submit_button("EINTRAG SPEICHERN"):
-            new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
-            fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
-            st.rerun()
-    
+  
     st.markdown("### Historie")
     for i, r in enumerate(reversed(st.session_state.tank_data)):
         idx = len(st.session_state.tank_data) - 1 - i
