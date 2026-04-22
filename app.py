@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -105,7 +104,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "💰 Finanze
 # --- 📋 ÜBERSICHT ---
 with tab1:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    # NUR HIER ANGEPASST: Start bei 2026, geht nach oben
     sel_y = st.selectbox("Jahr wählen", [2026, 2027, 2028, 2029], index=0)
     
     sprit = sum(float(r[3]) for r in st.session_state.tank_data if len(r)>3 and str(sel_y) in str(r[0]))
@@ -150,13 +148,19 @@ with tab2:
 with tab3:
     st.markdown("<div class='card'><h3>💰 Fixkosten</h3>", unsafe_allow_html=True)
     v = st.session_state.fix_vals
-    n_ü = st.number_input("Überwintern", value=v[0], format="%.2f")
-    n_s = st.number_input("Steuern", value=v[1], format="%.2f")
-    n_v = st.number_input("Versicherung", value=v[2], format="%.2f")
-    n_b = st.number_input("Bootsplatz", value=v[3], format="%.2f")
+    
+    # Icons direkt in den Labels der Number Inputs
+    n_ü = st.number_input("❄️ Überwintern", value=v[0], format="%.2f")
+    n_s = st.number_input("📑 Steuern", value=v[1], format="%.2f")
+    n_v = st.number_input("🛡️ Versicherung", value=v[2], format="%.2f")
+    n_b = st.number_input("⚓ Bootsplatz", value=v[3], format="%.2f")
+    
     if st.button("EINTRAG SPEICHERN"):
         fast_sync({"sheet":"fixkosten","method":"update","values":[n_ü, n_s, n_v, n_b]}, "fix_vals", "update")
-    st.markdown(f"Total: CHF {sum([n_ü,n_s,n_v,n_b]):,.2f}")
+    
+    st.divider()
+    total_fix = sum([n_ü, n_s, n_v, n_b])
+    st.markdown(f"#### 📊 Total: <span class='gold-price'>CHF {total_fix:,.2f}</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ⚙️ SERVICE ---
@@ -180,6 +184,3 @@ with tab4:
         if c2.button("🗑️", key=f"ds_{idx}"):
             fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
             st.rerun()
-
-
-
