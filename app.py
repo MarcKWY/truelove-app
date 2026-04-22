@@ -14,29 +14,13 @@ st.markdown("""
     <style>
     header[data-testid="stHeader"], [data-testid="stToolbar"], #GithubIcon { 
         background-color: #050A14 !important; 
-        color: #050A14 !important;
         display: none !important;
     }
-    
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
-    
-    .truelove-title { 
-        font-family: 'Georgia', serif; 
-        font-size: 34px; 
-        font-weight: bold; 
-        color: #D4AF37 !important; 
-        text-align: center; 
-        margin-bottom: 0px; 
-    }
-    
+    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37 !important; text-align: center; margin-bottom: 0px; }
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
-    
     [data-testid="stMetricValue"], label, p, span, .stMarkdown p { color: #FFFFFF !important; }
-    
-    div[data-baseweb="select"] * { color: #000000 !important; }
-    div[data-baseweb="popover"] * { color: #000000 !important; }
-
     .gold-price { color: #D4AF37 !important; font-weight: bold; }
     
     .stApp div[data-testid="stForm"] button, 
@@ -48,17 +32,6 @@ st.markdown("""
         width: 100% !important;
         border-radius: 10px !important;
         height: 3.5em !important;
-        border: none !important;
-        display: block !important;
-    }
-    
-    .stApp button[key^="dt_"], .stApp button[key^="ds_"] {
-        background-color: transparent !important;
-        color: #ff4b4b !important;
-        border: 1px solid #ff4b4b !important;
-        height: 2.2em !important;
-        width: auto !important;
-        font-weight: normal !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -88,10 +61,9 @@ def fast_sync(payload, local_key, action="append", idx=None):
 # --- HEADER ---
 st.markdown("<div class='truelove-title'>TRUELOVE</div>", unsafe_allow_html=True)
 st.markdown("<p class='crownline-subtitle'>CROWNLINE 286 SC</p>", unsafe_allow_html=True)
-if os.path.exists("boot_gross.jpg"): st.image("boot_gross.jpg", use_container_width=True)
 
-# Finanzen (tab3) wurde hier entfernt
-tab1, tab2, tab4 = st.tabs(["📋 Übersicht", "⛽ Tanken", "⚙️ Service"])
+# NUR NOCH DREI TABS DEFINIERT
+tab1, tab2, tab3 = st.tabs(["📋 Übersicht", "⛽ Tanken", "⚙️ Service"])
 
 # --- 📋 ÜBERSICHT ---
 with tab1:
@@ -114,7 +86,6 @@ with tab1:
 
 # --- ⛽ TANKEN ---
 with tab2:
-    if os.path.exists("tanken.jpg"): st.image("tanken.jpg", width=250)
     with st.form("t_form", clear_on_submit=True):
         st.markdown("### ⛽ Neuer Tankstopp")
         d = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
@@ -125,19 +96,9 @@ with tab2:
             new = [d.strftime("%d.%m.%Y"), lit, pr, round(lit*pr, 2), wer]
             fast_sync({"sheet":"tanken","method":"append","values":new}, "tank_data")
             st.rerun()
-    
-    st.markdown("### Historie")
-    for i, r in enumerate(reversed(st.session_state.tank_data)):
-        idx = len(st.session_state.tank_data) - 1 - i
-        c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {float(r[1]):.2f}L | <span class='gold-price'>CHF {float(r[3]):,.2f}</span> ({r[4]})", unsafe_allow_html=True)
-        if c2.button("🗑️", key=f"dt_{idx}"):
-            fast_sync({"sheet":"tanken","method":"delete","index":idx}, "tank_data", "delete", idx)
-            st.rerun()
 
 # --- ⚙️ SERVICE ---
-with tab4:
-    if os.path.exists("motor.jpg"): st.image("motor.jpg", width=250)
+with tab3:
     with st.form("s_form", clear_on_submit=True):
         st.markdown("### ⚙️ Service")
         d_s = st.date_input("Datum", date.today(), format="DD.MM.YYYY")
@@ -146,13 +107,4 @@ with tab4:
         if st.form_submit_button("EINTRAG SPEICHERN"):
             new_s = [d_s.strftime("%d.%m.%Y"), arb, kost]
             fast_sync({"sheet":"service","method":"append","values":new_s}, "serv_data")
-            st.rerun()
-            
-    st.markdown("### Historie")
-    for i, r in enumerate(reversed(st.session_state.serv_data)):
-        idx = len(st.session_state.serv_data) - 1 - i
-        c1, c2 = st.columns([0.85, 0.15])
-        c1.markdown(f"📅 {r[0]} | {r[1]} | <span class='gold-price'>CHF {float(r[2]):,.2f}</span>", unsafe_allow_html=True)
-        if c2.button("🗑️", key=f"ds_{idx}"):
-            fast_sync({"sheet":"service","method":"delete","index":idx}, "serv_data", "delete", idx)
             st.rerun()
