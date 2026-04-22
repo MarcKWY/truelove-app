@@ -8,7 +8,7 @@ import os
 st.set_page_config(page_title="Truelove Master", layout="centered", page_icon="⚓")
 
 # HIER DEINEN GOOGLE SCRIPT LINK EINTRAGEN
-SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCqgsOHhpZsa6Nxo3DWunbk8Pl0l5c5AwWOP8l5zTBAxdsxAh2yNS2QfuY10DCHd9v7A/exec" 
+SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmB4kUus6sA3tOJC0W0XrPKlA9_YffWzQNjgG0YC_-dLT0s5YYHERpEtKGUMpLQizG3Q/exec" 
 
 st.markdown("""
     <style>
