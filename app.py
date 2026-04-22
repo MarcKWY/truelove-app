@@ -1,6 +1,3 @@
-
-
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -18,7 +15,16 @@ st.markdown("""
     /* Grund-Design: Alles auf WEISS setzen */
     .stApp { background-color: #050A14; color: #FFFFFF !important; }
     
-    .truelove-title { font-family: 'Georgia', serif; font-size: 34px; font-weight: bold; color: #D4AF37; text-align: center; margin-bottom: 0px; }
+    /* TITEL IN GOLD */
+    .truelove-title { 
+        font-family: 'Georgia', serif; 
+        font-size: 34px; 
+        font-weight: bold; 
+        color: #D4AF37 !important; 
+        text-align: center; 
+        margin-bottom: 0px; 
+    }
+    
     .crownline-subtitle { font-family: 'Helvetica Neue', sans-serif; font-size: 14px; text-align: center; color: #FFFFFF; opacity: 0.9; letter-spacing: 2px; margin-bottom: 15px; }
     .card { background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #D4AF37; margin-bottom: 15px; }
     
@@ -37,8 +43,8 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] { color: #FFFFFF !important; }
     .stTabs [aria-selected="true"] p { color: #D4AF37 !important; }
 
-    /* Goldener Speicher-Button */
-    div.stButton > button:first-child {
+    /* Goldener Speicher-Button (EINTRAG SPEICHERN) */
+    div.stButton > button {
         background-color: #D4AF37 !important;
         color: #050A14 !important;
         font-weight: bold !important;
@@ -48,11 +54,13 @@ st.markdown("""
         border: none;
     }
     
-    /* Lösch-Button */
+    /* Ausnahme: Lösch-Button (Roter Rahmen, kein Hintergrund) */
     .stButton > button[key^="dt_"], .stButton > button[key^="ds_"] {
         background-color: transparent !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
+        height: auto !important;
+        width: auto !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -69,7 +77,7 @@ if 'tank_data' not in st.session_state:
     raw = load_all_data("tanken")
     st.session_state.tank_data = raw[1:] if len(raw) > 1 else []
 if 'serv_data' not in st.session_state:
-    raw = load_data = load_all_data("service")
+    raw = load_all_data("service")
     st.session_state.serv_data = raw[1:] if len(raw) > 1 else []
 if 'fix_vals' not in st.session_state:
     raw = load_all_data("fixkosten")
